@@ -94,3 +94,28 @@ class ShopFlow(TestCase):
         q.sizes.create(size="32", available=False)
         r = self.client.get(reverse("store:shop"), {"size": "32", "max": "1000"})
         self.assertEqual([x.name for x in r.context["products"]], ["Jeans"])
+
+
+class ReviewFlow(TestCase):
+    def test_review_and_admin_delete(self):
+        cat = Category.objects.create(name="Jacket")
+        p = Product.objects.create(category=cat, name="J", price=100)
+        p.sizes.create(size="M")
+        cust = User.objects.create_user(username="c", full_name="Cust", email="c@g.com", phone="01922222222", password="x123456")
+        admin = User.objects.create_user(username="a", full_name="A", email="a@g.com", phone="01711111111", password="x123456", is_staff=True)
+        self.client.force_login(cust)
+        self.client.post(reverse("store:review_add", args=[p.pk]), {"rating": 4, "comment": "Nice"})
+        self.client.post(reverse("store:review_add", args=[p.pk]), {"rating": 5, "comment": "Great"})  # edits, no duplicate
+        self.assertEqual(p.reviews.count(), 1)
+        r = p.reviews.get()
+        self.assertEqual(self.client.post(reverse("store:review_delete", args=[r.pk])).status_code, 302)
+        self.assertEqual(p.reviews.count(), 1)  # customer cannot delete
+        self.assertIn("Great", self.client.get(p.get_absolute_url()).content.decode())
+        self.client.force_login(admin)
+        page = self.client.get(reverse("store:category", args=[cat.slug])).content.decode()
+        self.assertIn("Add new Jacket", page)
+        self.assertIn(f"category={cat.pk}", page)
+        self.client.post(reverse("store:review_delete", args=[r.pk]))
+        self.assertEqual(p.reviews.count(), 0)
+        self.assertEqual(self.client.get(reverse("dashboard:product_new") + f"?category={cat.pk}").context["form"]["category"].value(), cat.pk)
+        self.assertEqual(self.client.get(reverse("dashboard:reviews")).status_code, 200)

@@ -1,7 +1,14 @@
 {% extends "base.html" %}
 {% block title %}{% if category %}{{ category.name }}{% else %}All products{% endif %} – Febricon{% endblock %}
 {% block content %}
-<h1 class="h1">{% if category %}{{ category.name }}{% else %}All products{% endif %}</h1>
+<div class="between page-head">
+  <div>
+    <h1 class="h1">{% if category %}{{ category.name }}{% else %}All products{% endif %}</h1>
+  </div>
+  {% if user.is_staff %}
+  <a class="btn" href="{% url 'dashboard:product_new' %}{% if category %}?category={{ category.pk }}{% endif %}">+ Add new {% if category %}{{ category.name }}{% else %}product{% endif %}</a>
+  {% endif %}
+</div>
 {% include "store/_filters.html" %}
 {% if products %}
 <p class="count">{{ products|length }} product{{ products|length|pluralize }}</p>

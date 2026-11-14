@@ -1,27 +1,43 @@
 {% extends "base.html" %}
+{% load static %}
 {% block content %}
 <section class="hero">
-  <div>
+  <div class="hero-txt">
     <p class="eyebrow">New season · Made in Bangladesh</p>
-    <h1>Wear the difference.</h1>
-    <p>Shirts, pants and more — styled for everyday Dhaka. Pay online or on delivery.</p>
-    <a class="btn" href="{% url 'store:shop' %}">Shop everything</a>
+    <h1>Wear the<br>difference.</h1>
+    <p class="lead">Shirts, pants, panjabis and more — styled for everyday Dhaka. Pay online or on delivery.</p>
+    <div class="actions">
+      {% if user.is_authenticated %}<a class="btn lg" href="{% url 'store:shop' %}">Shop everything</a>
+      {% else %}<a class="btn lg" href="{% url 'accounts:register' %}">Join &amp; start shopping</a>
+      <a class="btn lg ghost" href="{% url 'accounts:login' %}">Login</a>{% endif %}
+    </div>
+    <div class="trust"><span>✓ Cash on delivery</span><span>✓ bKash · Nagad · Rocket</span><span>✓ Live size stock</span></div>
   </div>
+  <div class="hero-img"><img src="{% static 'img/hero.jpg' %}" alt="Febricon model wearing yellow streetwear"></div>
 </section>
 
 {% if sections %}
 <h2 class="h">Shop by section</h2>
 <div class="sections">
   {% for c in sections %}
-  <a href="{{ c.get_absolute_url }}"><span>{{ c.name }}</span><small>{{ c.n }} item{{ c.n|pluralize }}</small></a>
+  <a href="{% if user.is_authenticated %}{{ c.get_absolute_url }}{% else %}{% url 'accounts:login' %}?next={{ c.get_absolute_url|urlencode }}{% endif %}" style="background-image:url('{% static 'img/'|add:c.cover %}')">
+    <span>{{ c.name }}</span><small>{{ c.n }} item{{ c.n|pluralize }} →</small>
+  </a>
   {% endfor %}
 </div>
 {% endif %}
 
+<h2 class="h">The look</h2>
+<div class="look">
+  <figure><img src="{% static 'img/model-jacket.jpg' %}" alt="Jacket styling"><figcaption>Layer up</figcaption></figure>
+  <figure><img src="{% static 'img/tee-white.jpg' %}" alt="White tee"><figcaption>Everyday essentials</figcaption></figure>
+  <figure><img src="{% static 'img/model-suit.jpg' %}" alt="Formal shirt"><figcaption>Office ready</figcaption></figure>
+</div>
+
 <h2 class="h">Latest arrivals</h2>
 {% if latest %}
 <div class="grid">{% for p in latest %}{% include "store/_card.html" %}{% endfor %}</div>
-<p class="center"><a class="btn ghost" href="{% url 'store:shop' %}">View all products →</a></p>
+{% if user.is_authenticated %}<p class="center"><a class="btn ghost lg" href="{% url 'store:shop' %}">View all products →</a></p>{% endif %}
 {% else %}
 <p class="empty">No products yet. Check back soon!</p>
 {% endif %}

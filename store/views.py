@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.db.models import Count, Q
@@ -9,7 +10,13 @@ from accounts.models import normalize_phone, phone_validator
 
 from .filters import filter_products
 from .forms import CheckoutForm
-from .models import CartItem, Category, Order, OrderItem, Product, SiteSettings
+from .models import CartItem, Category, Order, OrderItem, Product, Review, SiteSettings
+
+
+SECTION_IMG = {
+    "shirt": "denim-shirt.jpg", "pant": "jeans2.jpg", "t-shirt": "tee-white.jpg",
+    "polo-shirt": "tees-green.jpg", "panjabi": "rack.jpg", "hoodie": "sweat.jpg", "jacket": "model-jacket.jpg",
+}
 
 
 def home(request):
@@ -17,6 +24,9 @@ def home(request):
     sections = Category.objects.annotate(
         n=Count("products", filter=Q(products__is_active=True))
     ).filter(n__gt=0)
+    sections = list(sections)
+    for c in sections:
+        c.cover = SECTION_IMG.get(c.slug, "store.jpg")
     return render(request, "store/home.html", {
         "sections": sections,
         "latest": products[:8],
@@ -38,7 +48,38 @@ def product_detail(request, pk):
         Product.objects.select_related("category").prefetch_related("sizes"), pk=pk, is_active=True
     )
     related = Product.objects.filter(category=product.category, is_active=True).exclude(pk=pk)[:4]
-    return render(request, "store/product.html", {"product": product, "related": related})
+    reviews = product.reviews.select_related("user")
+    mine = reviews.filter(user=request.user).first() if request.user.is_authenticated else None
+    return render(request, "store/product.html", {
+        "product": product, "related": related, "reviews": reviews, "my_review": mine,
+    })
+
+
+@login_required
+@require_POST
+def review_add(request, pk):
+    product = get_object_or_404(Product, pk=pk, is_active=True)
+    comment = request.POST.get("comment", "").strip()[:1000]
+    try:
+        rating = max(1, min(5, int(request.POST.get("rating", 5))))
+    except ValueError:
+        rating = 5
+    if not comment:
+        messages.error(request, "Please write a comment.")
+    else:
+        Review.objects.update_or_create(
+            product=product, user=request.user, defaults={"rating": rating, "comment": comment})
+        messages.success(request, "Thanks for your review!")
+    return redirect(f"{product.get_absolute_url()}#reviews")
+
+
+@staff_member_required(login_url="accounts:login")
+@require_POST
+def review_delete(request, pk):
+    r = get_object_or_404(Review, pk=pk)
+    r.delete()
+    messages.success(request, "Review deleted.")
+    return redirect(request.POST.get("next") or r.product.get_absolute_url())
 
 
 # ---------------------------------------------------------------- cart

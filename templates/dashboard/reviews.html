@@ -1,0 +1,16 @@
+{% extends "dashboard/base.html" %}
+{% block dash %}
+<h1 class="h1">Customer reviews</h1>
+<div class="tw"><table class="tbl">
+  <tr><th>Product</th><th>Customer</th><th>Rating</th><th>Comment</th><th></th></tr>
+  {% for r in reviews %}
+  <tr>
+    <td><a href="{{ r.product.get_absolute_url }}#reviews">{{ r.product.name }}</a></td>
+    <td>{{ r.user.full_name }}<br><small>{{ r.created_at|date:"d M Y" }}</small></td>
+    <td class="stars">{{ r.rating }}★</td>
+    <td>{{ r.comment }}</td>
+    <td><form method="post" action="{% url 'store:review_delete' r.pk %}" onsubmit="return confirm('Delete this review?')">{% csrf_token %}<input type="hidden" name="next" value="{% url 'dashboard:reviews' %}"><button class="btn sm danger">Delete</button></form></td>
+  </tr>
+  {% empty %}<tr><td colspan="5" class="muted">No reviews yet.</td></tr>{% endfor %}
+</table></div>
+{% endblock %}

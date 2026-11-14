@@ -8,6 +8,8 @@
   <div class="pd-info">
     <a class="crumb" href="{{ product.category.get_absolute_url }}">← {{ product.category.name }}</a>
     <h1>{{ product.name }}</h1>
+    {% with rs=product.rating_stats %}{% if rs %}<a href="#reviews" class="stars">★ {{ rs.avg }} <span>({{ rs.n }} review{{ rs.n|pluralize }})</span></a>{% endif %}{% endwith %}
+    {% if user.is_staff %}<p><a class="btn sm ghost" href="{% url 'dashboard:product_edit' product.pk %}">Edit this product</a></p>{% endif %}
     <div class="price">৳{{ product.price }}{% if product.on_sale %} <s>৳{{ product.old_price }}</s>{% endif %}</div>
     {% if product.description %}<p class="desc">{{ product.description|linebreaksbr }}</p>{% endif %}
 
@@ -38,6 +40,45 @@
     {% endif %}
   </div>
 </div>
+
+<section id="reviews" class="reviews">
+  <h2 class="h">Customer reviews</h2>
+  <div class="rv-wrap">
+    <div>
+      {% for r in reviews %}
+      <div class="rv">
+        <div class="rv-h">
+          <b>{{ r.user.full_name }}</b>
+          <span class="stars sm">{% for i in "12345" %}{% if forloop.counter <= r.rating %}★{% else %}☆{% endif %}{% endfor %}</span>
+          <small>{{ r.created_at|date:"d M Y" }}</small>
+          {% if user.is_staff %}
+          <form method="post" action="{% url 'store:review_delete' r.pk %}" class="inline" onsubmit="return confirm('Delete this review?')">
+            {% csrf_token %}<input type="hidden" name="next" value="{{ request.path }}#reviews">
+            <button class="btn sm danger">Delete</button>
+          </form>
+          {% endif %}
+        </div>
+        <p>{{ r.comment|linebreaksbr }}</p>
+      </div>
+      {% empty %}<p class="muted">No reviews yet. Be the first to review!</p>{% endfor %}
+    </div>
+    <div class="rv-form">
+      <h3>{% if my_review %}Update your review{% else %}Write a review{% endif %}</h3>
+      {% if user.is_authenticated %}
+      <form method="post" action="{% url 'store:review_add' product.pk %}">
+        {% csrf_token %}
+        <div class="rate">
+          {% for n in "54321" %}<input type="radio" id="st{{ n }}" name="rating" value="{{ n }}" {% if my_review.rating|stringformat:"s" == n or not my_review and n == "5" %}checked{% endif %}><label for="st{{ n }}" title="{{ n }} stars">★</label>{% endfor %}
+        </div>
+        <textarea name="comment" rows="4" placeholder="How was the fit and quality?" required>{{ my_review.comment }}</textarea>
+        <button class="btn block">Submit review</button>
+      </form>
+      {% else %}
+      <p class="muted"><a href="{% url 'accounts:login' %}?next={{ request.path|urlencode }}">Login</a> to write a review.</p>
+      {% endif %}
+    </div>
+  </div>
+</section>
 
 {% if related %}
 <h2 class="h">You may also like</h2>

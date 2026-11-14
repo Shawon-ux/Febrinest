@@ -1,10 +1,10 @@
-import io
 import random
+from pathlib import Path
 
 from django.contrib.auth import get_user_model
-from django.core.files.base import ContentFile
+from django.core.files import File
+from django.conf import settings
 from django.core.management.base import BaseCommand
-from PIL import Image, ImageDraw
 
 from store.models import Category, Product, SiteSettings
 
@@ -28,14 +28,20 @@ DATA = {
 }
 
 
-def make_image(label, color):
-    img = Image.new("RGB", (600, 800), color)
-    d = ImageDraw.Draw(img)
-    d.rectangle([40, 40, 560, 760], outline="white", width=3)
-    d.text((70, 700), label, fill="white")
-    buf = io.BytesIO()
-    img.save(buf, "JPEG", quality=80)
-    return ContentFile(buf.getvalue())
+PHOTOS = {
+    "Classic Oxford Shirt": "denim-shirt", "Slim Fit Check Shirt": "model-suit", "Formal White Shirt": "suit2",
+    "Slim Chino Pant": "jeans", "Black Formal Trouser": "suit1", "Stretch Denim Jeans": "jeans2",
+    "Basic Cotton Tee": "tee-white", "Graphic Street Tee": "tee-graphic", "Oversized Drop-Shoulder Tee": "tee-black",
+    "Pique Polo – Navy": "tees-green", "Contrast Collar Polo": "rack2",
+    "Festive Cotton Panjabi": "rack", "Embroidered Eid Panjabi": "store", "Everyday Linen Panjabi": "suit1",
+    "Fleece Pullover Hoodie": "sweat", "Windbreaker Jacket": "model-jacket",
+}
+
+
+def attach_photo(p):
+    src = Path(settings.BASE_DIR) / "static" / "img" / f"{PHOTOS[p.name]}.jpg"
+    with open(src, "rb") as fh:
+        p.image.save(f"{p.name.lower().replace(' ', '-').replace('–', '')}.jpg", File(fh), save=True)
 
 
 class Command(BaseCommand):
@@ -59,12 +65,14 @@ class Command(BaseCommand):
         for pos, (cat_name, (sizes, items)) in enumerate(DATA.items()):
             cat, _ = Category.objects.get_or_create(name=cat_name, defaults={"position": pos})
             for name, price, old, color in items:
-                if Product.objects.filter(name=name).exists():
+                existing = Product.objects.filter(name=name).first()
+                if existing:
+                    attach_photo(existing)  # refresh photo on re-run
                     continue
                 p = Product.objects.create(
                     category=cat, name=name, price=price, old_price=old,
                     description=f"{name} from Febricon. Soft, durable fabric with a clean modern fit. Demo product.")
-                p.image.save(f"{name.lower().replace(' ', '-')}.jpg", make_image(name, color), save=True)
+                attach_photo(p)
                 blocked = random.choice(sizes[:-1])  # one size stocked out so the lock is visible
                 for sz in sizes:
                     p.sizes.create(size=sz, available=(sz != blocked))

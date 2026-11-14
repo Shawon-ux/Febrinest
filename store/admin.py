@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Category, Order, OrderItem, Product, ProductSize, SiteSettings
+from .models import Category, Order, OrderItem, Product, ProductSize, Review, SiteSettings
 
 
 class SizeInline(admin.TabularInline):
@@ -29,3 +29,4 @@ class OrderAdmin(admin.ModelAdmin):
 
 admin.site.register(Category)
 admin.site.register(SiteSettings)
+admin.site.register(Review)

@@ -6,7 +6,7 @@ from .models import User, normalize_phone, phone_validator
 
 class RegisterForm(forms.ModelForm):
     password = forms.CharField(widget=forms.PasswordInput, min_length=6)
-    confirm_password = forms.CharField(widget=forms.PasswordInput)
+    confirm_password = forms.CharField(widget=forms.PasswordInput, label="Confirm password")
 
     class Meta:
         model = User

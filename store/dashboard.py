@@ -7,7 +7,7 @@ from django.views.decorators.http import require_POST
 
 from .filters import filter_products
 from .forms import CategoryForm, ProductForm, SettingsForm
-from .models import Category, Order, Product, ProductSize, SiteSettings
+from .models import Category, Order, Product, ProductSize, Review, SiteSettings
 
 staff = staff_member_required(login_url="accounts:login")
 
@@ -38,7 +38,10 @@ def product_form(request, pk=None):
     if not Category.objects.exists():
         messages.info(request, "Create a section (e.g. Pants, Shirts) first.")
         return redirect("dashboard:category_new")
-    form = ProductForm(request.POST or None, request.FILES or None, instance=product)
+    initial = {}
+    if not product and request.GET.get("category", "").isdigit():
+        initial["category"] = int(request.GET["category"])
+    form = ProductForm(request.POST or None, request.FILES or None, instance=product, initial=initial)
     if request.method == "POST" and form.is_valid():
         saved = form.save()
         messages.success(request, f"“{saved.name}” saved.")
@@ -140,3 +143,10 @@ def settings_view(request):
         messages.success(request, "Settings saved. New delivery charges apply to the next orders.")
         return redirect("dashboard:settings")
     return render(request, "dashboard/settings.html", {"form": form})
+
+
+@staff
+def reviews(request):
+    return render(request, "dashboard/reviews.html", {
+        "reviews": Review.objects.select_related("user", "product"),
+    })

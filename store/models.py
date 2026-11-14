@@ -92,6 +92,13 @@ class Product(models.Model):
         return any(s.available for s in self.sizes.all())
 
     @property
+    def rating_stats(self):
+        revs = list(self.reviews.all())
+        if not revs:
+            return None
+        return {"avg": round(sum(r.rating for r in revs) / len(revs), 1), "n": len(revs)}
+
+    @property
     def on_sale(self):
         return bool(self.old_price and self.old_price > self.price)
 
@@ -192,3 +199,18 @@ class OrderItem(models.Model):
     @property
     def line_total(self):
         return self.price * self.quantity
+
+
+class Review(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="reviews")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="reviews")
+    rating = models.PositiveSmallIntegerField(default=5)
+    comment = models.TextField(max_length=1000)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        unique_together = ("product", "user")  # one review per customer per product; resubmitting edits it
+
+    def __str__(self):
+        return f"{self.user} on {self.product} ({self.rating}★)"

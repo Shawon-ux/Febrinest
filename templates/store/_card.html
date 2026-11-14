@@ -6,6 +6,7 @@
   <div class="meta">
     <div class="cat">{{ p.category.name }}</div>
     <div class="nm">{{ p.name }}</div>
+    {% with rs=p.rating_stats %}{% if rs %}<div class="stars sm">★ {{ rs.avg }} <span>({{ rs.n }})</span></div>{% endif %}{% endwith %}
     <div class="pr">৳{{ p.price }}{% if p.on_sale %} <s>৳{{ p.old_price }}</s>{% endif %}</div>
     <div class="sz">{% for s in p.sizes.all %}<span class="{% if not s.available %}x{% endif %}">{{ s.size }}</span>{% endfor %}</div>
   </div>

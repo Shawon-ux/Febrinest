@@ -1,16 +1,23 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}Login – Febricon{% endblock %}
 {% block content %}
-<div class="auth">
-  <h1>Welcome back</h1>
-  <form method="post">
-    {% csrf_token %}
-    <input type="hidden" name="next" value="{{ next }}">
-    {% for e in form.non_field_errors %}<div class="msg error">{{ e }}</div>{% endfor %}
-    {% include "_field.html" with field=form.identifier %}
-    {% include "_field.html" with field=form.password %}
-    <button class="btn block">Login</button>
-  </form>
-  <p class="center muted">New to Febricon? <a href="{% url 'accounts:register' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Create an account</a></p>
+<div class="auth2">
+  <div class="auth-pic" style="background-image:url('{% static 'img/model-jacket.jpg' %}')">
+    <div><h2>Welcome back.</h2><p>Your cart and orders are waiting.</p></div>
+  </div>
+  <div class="auth-form">
+    <h1>Login</h1>
+    <p class="muted">Use your phone number or email.</p>
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ next }}">
+      {% for e in form.non_field_errors %}<div class="msg error">{{ e }}</div>{% endfor %}
+      {% include "_field.html" with field=form.identifier %}
+      {% include "_field.html" with field=form.password %}
+      <button class="btn lg block">Login</button>
+    </form>
+    <p class="center muted">New to Febricon? <a href="{% url 'accounts:register' %}{% if next %}?next={{ next|urlencode }}{% endif %}"><b>Create an account</b></a></p>
+  </div>
 </div>
 {% endblock %}
