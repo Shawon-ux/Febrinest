@@ -1,0 +1,12 @@
+<a class="card" href="{{ p.get_absolute_url }}">
+  <div class="img">
+    {% if p.image %}<img src="{{ p.image.url }}" alt="{{ p.name }}" loading="lazy">{% else %}<span class="ph">{{ p.name|slice:":1" }}</span>{% endif %}
+    {% if not p.in_stock %}<span class="tag out">Sold out</span>{% elif p.on_sale %}<span class="tag">Sale</span>{% endif %}
+  </div>
+  <div class="meta">
+    <div class="cat">{{ p.category.name }}</div>
+    <div class="nm">{{ p.name }}</div>
+    <div class="pr">৳{{ p.price }}{% if p.on_sale %} <s>৳{{ p.old_price }}</s>{% endif %}</div>
+    <div class="sz">{% for s in p.sizes.all %}<span class="{% if not s.available %}x{% endif %}">{{ s.size }}</span>{% endfor %}</div>
+  </div>
+</a>

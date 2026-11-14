@@ -1,0 +1,28 @@
+{% extends "dashboard/base.html" %}
+{% block dash %}
+<h1 class="h1">{% if product %}Edit “{{ product.name }}”{% else %}New product{% endif %}</h1>
+<form method="post" enctype="multipart/form-data" class="narrow">
+  {% csrf_token %}
+  {{ form.non_field_errors }}
+  {% include "_field.html" with field=form.category %}
+  {% include "_field.html" with field=form.name %}
+  {% include "_field.html" with field=form.description %}
+  {% include "_field.html" with field=form.price %}
+  {% include "_field.html" with field=form.old_price %}
+  {% include "_field.html" with field=form.image %}
+  {% if product and product.image %}<img src="{{ product.image.url }}" class="preview" alt="">{% endif %}
+  <label class="chk"><input type="checkbox" name="is_active" {% if form.is_active.value %}checked{% endif %}> Visible in shop</label>
+
+  <h3>Sizes &amp; stock</h3>
+  <p class="muted">Blocked sizes still show to customers as “Not available” but cannot be added to the cart.</p>
+  <div class="size-grid">
+    {% for f in form.size_fields %}
+    <div class="sg"><span>{{ f.label }}</span>{{ f }}</div>
+    {% endfor %}
+  </div>
+  <div class="actions">
+    <button class="btn">Save product</button>
+    <a class="btn ghost" href="{% url 'dashboard:products' %}">Cancel</a>
+  </div>
+</form>
+{% endblock %}

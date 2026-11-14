@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}{{ product.name }} – Febricon{% endblock %}
+{% block content %}
+<div class="pd">
+  <div class="pd-img">
+    {% if product.image %}<img src="{{ product.image.url }}" alt="{{ product.name }}">{% else %}<span class="ph big">{{ product.name|slice:":1" }}</span>{% endif %}
+  </div>
+  <div class="pd-info">
+    <a class="crumb" href="{{ product.category.get_absolute_url }}">← {{ product.category.name }}</a>
+    <h1>{{ product.name }}</h1>
+    <div class="price">৳{{ product.price }}{% if product.on_sale %} <s>৳{{ product.old_price }}</s>{% endif %}</div>
+    {% if product.description %}<p class="desc">{{ product.description|linebreaksbr }}</p>{% endif %}
+
+    {% if product.in_stock %}
+    <form method="post" action="{% url 'store:cart_add' product.pk %}">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ request.path }}">
+      <div class="label">Select size</div>
+      <div class="sizes">
+        {% for s in product.sizes.all %}
+          <label class="size {% if not s.available %}off{% endif %}" title="{% if not s.available %}Out of stock{% endif %}">
+            <input type="radio" name="size" value="{{ s.size }}" {% if not s.available %}disabled{% endif %} required>
+            <span>{{ s.size }}</span>
+            {% if not s.available %}<em>Not available</em>{% endif %}
+          </label>
+        {% endfor %}
+      </div>
+      <div class="label">Quantity</div>
+      <input type="number" name="quantity" value="1" min="1" max="20" class="qty">
+      <div class="actions">
+        <button class="btn" name="go" value="">Add to cart</button>
+        <button class="btn ghost" name="go" value="cart">Add &amp; view cart</button>
+      </div>
+    </form>
+    {% else %}
+      <div class="sizes">{% for s in product.sizes.all %}<label class="size off"><span>{{ s.size }}</span><em>Not available</em></label>{% endfor %}</div>
+      <p class="empty">This product is currently sold out.</p>
+    {% endif %}
+  </div>
+</div>
+
+{% if related %}
+<h2 class="h">You may also like</h2>
+<div class="grid">{% for p in related %}{% include "store/_card.html" %}{% endfor %}</div>
+{% endif %}
+{% endblock %}

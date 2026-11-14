@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero">
+  <div>
+    <p class="eyebrow">New season · Made in Bangladesh</p>
+    <h1>Wear the difference.</h1>
+    <p>Shirts, pants and more — styled for everyday Dhaka. Pay online or on delivery.</p>
+    <a class="btn" href="{% url 'store:shop' %}">Shop everything</a>
+  </div>
+</section>
+
+{% if sections %}
+<h2 class="h">Shop by section</h2>
+<div class="sections">
+  {% for c in sections %}
+  <a href="{{ c.get_absolute_url }}"><span>{{ c.name }}</span><small>{{ c.n }} item{{ c.n|pluralize }}</small></a>
+  {% endfor %}
+</div>
+{% endif %}
+
+<h2 class="h">Latest arrivals</h2>
+{% if latest %}
+<div class="grid">{% for p in latest %}{% include "store/_card.html" %}{% endfor %}</div>
+<p class="center"><a class="btn ghost" href="{% url 'store:shop' %}">View all products →</a></p>
+{% else %}
+<p class="empty">No products yet. Check back soon!</p>
+{% endif %}
+
+<div class="info">
+  <div><b>Delivery</b><span>৳{{ site.delivery_inside }} inside Dhaka · ৳{{ site.delivery_outside }} outside</span></div>
+  <div><b>Pay your way</b><span>Cash on delivery, bKash, Nagad or Rocket</span></div>
+  <div><b>Know your size</b><span>See live which sizes are in stock</span></div>
+</div>
+{% endblock %}

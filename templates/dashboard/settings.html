@@ -1,0 +1,17 @@
+{% extends "dashboard/base.html" %}
+{% block dash %}
+<h1 class="h1">Delivery &amp; payment</h1>
+<form method="post" class="narrow">
+  {% csrf_token %}
+  <h3>Delivery charges</h3>
+  {% include "_field.html" with field=form.delivery_inside %}
+  {% include "_field.html" with field=form.delivery_outside %}
+  <h3>Online payment numbers</h3>
+  <p class="muted">Customers send money here, then enter their TrxID. Leave blank to hide a method.</p>
+  {% include "_field.html" with field=form.bkash_number %}
+  {% include "_field.html" with field=form.nagad_number %}
+  {% include "_field.html" with field=form.rocket_number %}
+  {% include "_field.html" with field=form.contact_phone %}
+  <button class="btn">Save settings</button>
+</form>
+{% endblock %}

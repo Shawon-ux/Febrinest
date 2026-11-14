@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}My orders – Febricon{% endblock %}
+{% block content %}
+<h1 class="h1">My orders</h1>
+{% for o in orders %}
+<div class="order">
+  <div class="oh"><b>Order #{{ o.pk }}</b><span>{{ o.created_at|date:"d M Y, H:i" }}</span>
+    <span class="badge">{{ o.get_status_display }}</span><span class="badge alt">{{ o.get_payment_status_display }}</span></div>
+  {% for i in o.items.all %}<div class="li"><span>{{ i.name }} <small>({{ i.size }}) × {{ i.quantity }}</small></span><b>৳{{ i.line_total }}</b></div>{% endfor %}
+  <div class="li"><span>Delivery ({{ o.get_area_display }})</span><b>৳{{ o.delivery_charge }}</b></div>
+  <div class="li tot"><span>Total · {{ o.get_payment_method_display }}</span><b>৳{{ o.total }}</b></div>
+</div>
+{% empty %}
+<p class="empty">You haven't ordered anything yet.</p>
+{% endfor %}
+{% endblock %}

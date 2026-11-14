@@ -1,0 +1,10 @@
+{% extends "dashboard/base.html" %}
+{% block dash %}
+<h1 class="h1">{% if cat %}Edit section{% else %}New section{% endif %}</h1>
+<form method="post" class="narrow">
+  {% csrf_token %}
+  {% include "_field.html" with field=form.name %}
+  {% include "_field.html" with field=form.position %}
+  <div class="actions"><button class="btn">Save</button><a class="btn ghost" href="{% url 'dashboard:categories' %}">Cancel</a></div>
+</form>
+{% endblock %}

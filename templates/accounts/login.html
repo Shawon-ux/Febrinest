@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Login – Febricon{% endblock %}
+{% block content %}
+<div class="auth">
+  <h1>Welcome back</h1>
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ next }}">
+    {% for e in form.non_field_errors %}<div class="msg error">{{ e }}</div>{% endfor %}
+    {% include "_field.html" with field=form.identifier %}
+    {% include "_field.html" with field=form.password %}
+    <button class="btn block">Login</button>
+  </form>
+  <p class="center muted">New to Febricon? <a href="{% url 'accounts:register' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Create an account</a></p>
+</div>
+{% endblock %}

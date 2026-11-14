@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Your cart – Febricon{% endblock %}
+{% block content %}
+<h1 class="h1">Your cart</h1>
+{% if items %}
+<div class="cart-list">
+  {% for i in items %}
+  <div class="row {% if not i.ok %}bad{% endif %}">
+    <a class="thumb" href="{{ i.product.get_absolute_url }}">
+      {% if i.product.image %}<img src="{{ i.product.image.url }}" alt="">{% else %}<span class="ph">{{ i.product.name|slice:":1" }}</span>{% endif %}
+    </a>
+    <div class="grow">
+      <a class="nm" href="{{ i.product.get_absolute_url }}">{{ i.product.name }}</a>
+      <div class="muted">Size {{ i.size }} · ৳{{ i.product.price }} each</div>
+      {% if not i.ok %}<div class="err">Size {{ i.size }} is no longer available. Remove this item.</div>{% endif %}
+    </div>
+    <form method="post" action="{% url 'store:cart_update' i.pk %}" class="qtyf">
+      {% csrf_token %}
+      <input type="number" name="quantity" value="{{ i.quantity }}" min="1" max="20" class="qty" onchange="this.form.submit()">
+    </form>
+    <div class="lt">৳{{ i.line_total }}</div>
+    <form method="post" action="{% url 'store:cart_remove' i.pk %}">
+      {% csrf_token %}<button class="btn sm danger" title="Remove">Delete</button>
+    </form>
+  </div>
+  {% endfor %}
+</div>
+<div class="sum">
+  <div><span>Subtotal</span><b>৳{{ subtotal }}</b></div>
+  <small>Delivery charge is added at checkout (৳{{ site.delivery_inside }} inside Dhaka, ৳{{ site.delivery_outside }} outside).</small>
+  <div class="actions">
+    <a class="btn ghost" href="{% url 'store:home' %}">← Continue shopping</a>
+    {% if has_blocked %}<button class="btn" disabled>Remove unavailable items</button>
+    {% else %}<a class="btn" href="{% url 'store:checkout' %}">Proceed to payment</a>{% endif %}
+  </div>
+</div>
+{% else %}
+<p class="empty">Your cart is empty.</p>
+<p class="center"><a class="btn" href="{% url 'store:shop' %}">Start shopping</a></p>
+{% endif %}
+{% endblock %}

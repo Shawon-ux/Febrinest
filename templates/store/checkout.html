@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Payment – Febricon{% endblock %}
+{% block content %}
+<h1 class="h1">Review &amp; pay</h1>
+<form method="post" class="co">
+  {% csrf_token %}
+  <div class="co-main">
+    <h3>Delivery details</h3>
+    {% include "_field.html" with field=form.full_name %}
+    {% include "_field.html" with field=form.phone %}
+    {% include "_field.html" with field=form.address %}
+
+    <div class="field"><label>Delivery area</label>
+      <div class="opts">
+        <label class="opt"><input type="radio" name="area" value="inside" {% if form.area.value|default:'inside' == 'inside' %}checked{% endif %}> Inside Dhaka <b>৳{{ delivery_inside }}</b></label>
+        <label class="opt"><input type="radio" name="area" value="outside" {% if form.area.value == 'outside' %}checked{% endif %}> Outside Dhaka <b>৳{{ delivery_outside }}</b></label>
+      </div>
+      {% for e in form.area.errors %}<div class="err">{{ e }}</div>{% endfor %}
+    </div>
+
+    <h3>Payment method</h3>
+    <div class="opts col">
+      <label class="opt"><input type="radio" name="payment_method" value="cod" {% if form.payment_method.value|default:'cod' == 'cod' %}checked{% endif %}> <span><b>Cash on Delivery</b><small>Pay when you receive your order (offline)</small></span></label>
+      {% if site.bkash_number %}<label class="opt"><input type="radio" name="payment_method" value="bkash" {% if form.payment_method.value == 'bkash' %}checked{% endif %}> <span><b>bKash</b><small>Send money to {{ site.bkash_number }}</small></span></label>{% endif %}
+      {% if site.nagad_number %}<label class="opt"><input type="radio" name="payment_method" value="nagad" {% if form.payment_method.value == 'nagad' %}checked{% endif %}> <span><b>Nagad</b><small>Send money to {{ site.nagad_number }}</small></span></label>{% endif %}
+      {% if site.rocket_number %}<label class="opt"><input type="radio" name="payment_method" value="rocket" {% if form.payment_method.value == 'rocket' %}checked{% endif %}> <span><b>Rocket</b><small>Send money to {{ site.rocket_number }}</small></span></label>{% endif %}
+    </div>
+    {% for e in form.payment_method.errors %}<div class="err">{{ e }}</div>{% endfor %}
+    <div id="trx" style="display:none">
+      <p class="note">Send the <b>total amount</b> to the number above, then enter your number and TrxID. We confirm your payment before dispatch.</p>
+      {% include "_field.html" with field=form.transaction_id %}
+    </div>
+    {% if form.errors and not form.transaction_id.errors and form.non_field_errors %}{{ form.non_field_errors }}{% endif %}
+  </div>
+
+  <aside class="co-sum">
+    <h3>Order summary</h3>
+    {% for i in items %}
+    <div class="li"><span>{{ i.product.name }} <small>({{ i.size }}) × {{ i.quantity }}</small></span><b>৳{{ i.line_total }}</b></div>
+    {% endfor %}
+    <div class="li"><span>Subtotal</span><b>৳<span id="sub">{{ subtotal }}</span></b></div>
+    <div class="li"><span>Delivery</span><b>৳<span id="del">{{ delivery_inside }}</span></b></div>
+    <div class="li tot"><span>Total</span><b>৳<span id="tot"></span></b></div>
+    <button class="btn block">Place order</button>
+    <a class="btn ghost block" href="{% url 'store:cart' %}">← Back to cart</a>
+  </aside>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const IN = {{ delivery_inside }}, OUT = {{ delivery_outside }}, SUB = {{ subtotal }};
+  function refresh() {
+    const area = document.querySelector('[name=area]:checked').value;
+    const d = area === 'inside' ? IN : OUT;
+    document.getElementById('del').textContent = d;
+    document.getElementById('tot').textContent = SUB + d;
+    const pm = document.querySelector('[name=payment_method]:checked');
+    document.getElementById('trx').style.display = pm && pm.value !== 'cod' ? 'block' : 'none';
+  }
+  document.querySelectorAll('[name=area],[name=payment_method]').forEach(e => e.addEventListener('change', refresh));
+  refresh();
+</script>
+{% endblock %}

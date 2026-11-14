@@ -1,0 +1,28 @@
+{% extends "dashboard/base.html" %}
+{% block dash %}
+<div class="between"><h1 class="h1">Products</h1><a class="btn" href="{% url 'dashboard:product_new' %}">+ New product</a></div>
+{% include "store/_filters.html" %}
+<div class="tw"><table class="tbl">
+  <tr><th></th><th>Product</th><th>Price</th><th>Sizes <small>(click to lock / unlock)</small></th><th></th></tr>
+  {% for p in products %}
+  <tr>
+    <td class="tn">{% if p.image %}<img src="{{ p.image.url }}" alt="">{% else %}<span class="ph">{{ p.name|slice:":1" }}</span>{% endif %}</td>
+    <td><b>{{ p.name }}</b>{% if not p.is_active %} <span class="badge">Hidden</span>{% endif %}<br><small>{{ p.category.name }}</small></td>
+    <td>৳{{ p.price }}</td>
+    <td>
+      {% for s in p.sizes.all %}
+      <form method="post" action="{% url 'dashboard:size_toggle' s.pk %}" class="inline">
+        {% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
+        <button class="chip {% if not s.available %}locked{% endif %}" title="{% if s.available %}Click to block{% else %}Blocked – click to unblock{% endif %}">{{ s.size }}{% if not s.available %} 🔒{% endif %}</button>
+      </form>
+      {% endfor %}
+    </td>
+    <td class="nowrap">
+      <a class="btn sm ghost" href="{% url 'dashboard:product_edit' p.pk %}">Edit</a>
+      <form method="post" action="{% url 'dashboard:product_delete' p.pk %}" class="inline" onsubmit="return confirm('Delete {{ p.name|escapejs }}?')">
+        {% csrf_token %}<button class="btn sm danger">Delete</button></form>
+    </td>
+  </tr>
+  {% empty %}<tr><td colspan="5" class="muted">No products found.</td></tr>{% endfor %}
+</table></div>
+{% endblock %}

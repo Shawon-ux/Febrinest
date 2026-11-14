@@ -1,0 +1,96 @@
+from django.contrib.auth import get_user_model
+from django.test import TestCase
+from django.urls import reverse
+
+from .models import CartItem, Category, Order, Product, SiteSettings
+
+User = get_user_model()
+
+
+class ShopFlow(TestCase):
+    def setUp(self):
+        self.admin = User.objects.create_user(
+            username="a", full_name="Boss", email="boss@gmail.com", phone="01711111111",
+            password="secret123", is_staff=True)
+        self.cat = Category.objects.create(name="Pants")
+
+    def test_register_and_login_by_phone_or_email(self):
+        r = self.client.post(reverse("accounts:register"), {
+            "full_name": "Rahim", "email": "Rahim@gmail.com", "phone": "+8801812345678",
+            "password": "pass1234", "confirm_password": "pass1234"})
+        self.assertEqual(r.status_code, 302)
+        self.client.logout()
+        for ident in ("01812345678", "rahim@gmail.com"):
+            r = self.client.post(reverse("accounts:login"), {"identifier": ident, "password": "pass1234"})
+            self.assertEqual(r.status_code, 302, ident)
+            self.client.logout()
+        r = self.client.post(reverse("accounts:login"), {"identifier": "01812345678", "password": "bad"})
+        self.assertEqual(r.status_code, 200)
+
+    def test_register_requires_phone(self):
+        r = self.client.post(reverse("accounts:register"), {
+            "full_name": "X", "email": "x@gmail.com", "phone": "",
+            "password": "pass1234", "confirm_password": "pass1234"})
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse(User.objects.filter(email="x@gmail.com").exists())
+
+    def test_customer_cannot_open_dashboard(self):
+        u = User.objects.create_user(username="c", full_name="C", email="c@gmail.com", phone="01922222222", password="x123456")
+        self.client.force_login(u)
+        self.assertEqual(self.client.get(reverse("dashboard:products")).status_code, 302)
+
+    def test_admin_product_size_lock_cart_checkout(self):
+        self.client.force_login(self.admin)
+        r = self.client.post(reverse("dashboard:product_new"), {
+            "category": self.cat.pk, "name": "Chino", "description": "d", "price": "300",
+            "is_active": "on", "size_L": "blocked", "size_XL": "available"})
+        self.assertEqual(r.status_code, 302, getattr(r, "context", None) and r.context["form"].errors)
+        p = Product.objects.get()
+        # price edit next day
+        self.client.post(reverse("dashboard:product_edit", args=[p.pk]), {
+            "category": self.cat.pk, "name": "Chino", "price": "350", "is_active": "on",
+            "size_L": "blocked", "size_XL": "available"})
+        p.refresh_from_db()
+        self.assertEqual(p.price, 350)
+        self.client.logout()
+
+        cust = User.objects.create_user(username="c", full_name="Cust", email="c@gmail.com", phone="01922222222", password="x123456")
+        self.client.force_login(cust)
+        page = self.client.get(p.get_absolute_url()).content.decode()
+        self.assertIn("Not available", page)
+        # blocked size rejected
+        self.client.post(reverse("store:cart_add", args=[p.pk]), {"size": "L", "quantity": 1})
+        self.assertEqual(CartItem.objects.count(), 0)
+        self.client.post(reverse("store:cart_add", args=[p.pk]), {"size": "XL", "quantity": 2})
+        self.assertEqual(CartItem.objects.get().quantity, 2)
+
+        # admin blocks XL after it's in cart -> checkout refused
+        p.sizes.filter(size="XL").update(available=False)
+        self.assertEqual(self.client.get(reverse("store:checkout")).status_code, 302)
+        p.sizes.filter(size="XL").update(available=True)
+
+        data = {"full_name": "Cust", "phone": "01922222222", "address": "Road 1", "area": "outside",
+                "payment_method": "bkash", "transaction_id": ""}
+        self.assertEqual(self.client.post(reverse("store:checkout"), data).status_code, 200)  # needs TrxID
+        data["transaction_id"] = "01922222222 / ABC123"
+        self.assertEqual(self.client.post(reverse("store:checkout"), data).status_code, 302)
+        o = Order.objects.get()
+        self.assertEqual((o.subtotal, o.delivery_charge, o.total), (700, 120, 820))
+        self.assertEqual(o.payment_status, Order.PAY_VERIFY)
+        self.assertEqual(CartItem.objects.count(), 0)
+
+        # admin raises delivery fee; COD inside Dhaka
+        s = SiteSettings.get(); s.delivery_inside = 80; s.save()
+        self.client.post(reverse("store:cart_add", args=[p.pk]), {"size": "XL", "quantity": 1})
+        data.update(area="inside", payment_method="cod")
+        self.client.post(reverse("store:checkout"), data)
+        o2 = Order.objects.first()
+        self.assertEqual((o2.delivery_charge, o2.total), (80, 430))
+
+    def test_filters(self):
+        p = Product.objects.create(category=self.cat, name="Jeans", price=900)
+        p.sizes.create(size="32", available=True)
+        q = Product.objects.create(category=self.cat, name="Cargo", price=500)
+        q.sizes.create(size="32", available=False)
+        r = self.client.get(reverse("store:shop"), {"size": "32", "max": "1000"})
+        self.assertEqual([x.name for x in r.context["products"]], ["Jeans"])

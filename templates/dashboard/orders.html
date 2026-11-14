@@ -1,0 +1,10 @@
+{% extends "dashboard/base.html" %}
+{% block dash %}
+<h1 class="h1">Orders</h1>
+<form method="get" class="filters">
+  <select name="status"><option value="">Any status</option>{% for k,l in statuses %}<option value="{{ k }}" {% if status == k %}selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+  <select name="payment"><option value="">Any payment</option>{% for k,l in pay_statuses %}<option value="{{ k }}" {% if pay == k %}selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+  <button class="btn sm">Filter</button>
+</form>
+{% include "dashboard/_orders_table.html" %}
+{% endblock %}

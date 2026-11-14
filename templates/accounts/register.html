@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Sign up – Febricon{% endblock %}
+{% block content %}
+<div class="auth">
+  <h1>Create account</h1>
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ next }}">
+    {% include "_field.html" with field=form.full_name %}
+    {% include "_field.html" with field=form.email %}
+    {% include "_field.html" with field=form.phone %}
+    {% include "_field.html" with field=form.password %}
+    {% include "_field.html" with field=form.confirm_password %}
+    <button class="btn block">Sign up</button>
+  </form>
+  <p class="center muted">Already have an account? <a href="{% url 'accounts:login' %}">Login</a></p>
+</div>
+{% endblock %}

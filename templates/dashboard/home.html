@@ -1,0 +1,15 @@
+{% extends "dashboard/base.html" %}
+{% block dash %}
+<h1 class="h1">Admin overview</h1>
+<div class="stats">
+  <div><b>{{ n_products }}</b><span>Products</span></div>
+  <div><b>{{ n_orders }}</b><span>Orders</span></div>
+  <div><b>{{ n_pending }}</b><span>Pending</span></div>
+  <div><b>{{ n_verify }}</b><span>Payments to verify</span></div>
+  <div><b>৳{{ revenue }}</b><span>Revenue</span></div>
+</div>
+<p><a class="btn" href="{% url 'dashboard:product_new' %}">+ New product</a>
+   <a class="btn ghost" href="{% url 'dashboard:category_new' %}">+ New section</a></p>
+<h2 class="h">Recent orders</h2>
+{% include "dashboard/_orders_table.html" with orders=recent %}
+{% endblock %}

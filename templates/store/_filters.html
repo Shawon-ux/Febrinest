@@ -1,0 +1,21 @@
+<form method="get" class="filters">
+  <input type="search" name="q" value="{{ f.q }}" placeholder="Search products…">
+  {% if not category %}
+  <select name="category">
+    <option value="">All sections</option>
+    {% for c in filter_categories %}<option value="{{ c.slug }}" {% if f.category == c.slug %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
+  </select>
+  {% endif %}
+  <select name="size">
+    <option value="">Any size</option>
+    {% for s in filter_sizes %}<option value="{{ s }}" {% if f.size == s %}selected{% endif %}>{{ s }}</option>{% endfor %}
+  </select>
+  <input type="number" name="min" value="{{ f.min }}" placeholder="Min ৳" min="0">
+  <input type="number" name="max" value="{{ f.max }}" placeholder="Max ৳" min="0">
+  <select name="sort">
+    {% for k, label in sorts %}<option value="{{ k }}" {% if f.sort == k %}selected{% endif %}>{{ label }}</option>{% endfor %}
+  </select>
+  <label class="chk"><input type="checkbox" name="in_stock" value="1" {% if f.in_stock %}checked{% endif %}> In stock only</label>
+  <button class="btn sm">Filter</button>
+  {% if filters_active or f.sort != 'new' %}<a class="btn sm ghost" href="{{ base_url }}">Reset</a>{% endif %}
+</form>

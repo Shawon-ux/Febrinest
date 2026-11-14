@@ -1,0 +1,24 @@
+{% extends "dashboard/base.html" %}
+{% block dash %}
+<h1 class="h1">Order #{{ order.pk }}</h1>
+<div class="co">
+  <div class="co-main">
+    <h3>Customer</h3>
+    <p>{{ order.full_name }} · {{ order.phone }}<br>{{ order.address|linebreaksbr }}<br><b>{{ order.get_area_display }}</b></p>
+    <h3>Items</h3>
+    {% for i in order.items.all %}<div class="li"><span>{{ i.name }} <small>({{ i.size }}) × {{ i.quantity }} @ ৳{{ i.price }}</small></span><b>৳{{ i.line_total }}</b></div>{% endfor %}
+    <div class="li"><span>Delivery</span><b>৳{{ order.delivery_charge }}</b></div>
+    <div class="li tot"><span>Total</span><b>৳{{ order.total }}</b></div>
+    <p>Payment: <b>{{ order.get_payment_method_display }}</b>{% if order.transaction_id %} · TrxID: <b>{{ order.transaction_id }}</b>{% endif %}</p>
+  </div>
+  <aside class="co-sum">
+    <h3>Update</h3>
+    <form method="post">
+      {% csrf_token %}
+      <div class="field"><label>Order status</label><select name="status">{% for k,l in statuses %}<option value="{{ k }}" {% if order.status == k %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></div>
+      <div class="field"><label>Payment status</label><select name="payment_status">{% for k,l in pay_statuses %}<option value="{{ k }}" {% if order.payment_status == k %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></div>
+      <button class="btn block">Save</button>
+    </form>
+  </aside>
+</div>
+{% endblock %}

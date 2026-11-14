@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}{% if category %}{{ category.name }}{% else %}All products{% endif %} – Febricon{% endblock %}
+{% block content %}
+<h1 class="h1">{% if category %}{{ category.name }}{% else %}All products{% endif %}</h1>
+{% include "store/_filters.html" %}
+{% if products %}
+<p class="count">{{ products|length }} product{{ products|length|pluralize }}</p>
+<div class="grid">{% for p in products %}{% include "store/_card.html" %}{% endfor %}</div>
+{% else %}
+<p class="empty">Nothing matches your filters.</p>
+{% endif %}
+{% endblock %}

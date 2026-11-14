@@ -1,0 +1,12 @@
+{% extends "dashboard/base.html" %}
+{% block dash %}
+<div class="between"><h1 class="h1">Sections</h1><a class="btn" href="{% url 'dashboard:category_new' %}">+ New section</a></div>
+<div class="tw"><table class="tbl">
+  <tr><th>Name</th><th>Products</th><th>Order</th><th></th></tr>
+  {% for c in categories %}
+  <tr><td><b>{{ c.name }}</b></td><td>{{ c.n }}</td><td>{{ c.position }}</td>
+    <td class="nowrap"><a class="btn sm ghost" href="{% url 'dashboard:category_edit' c.pk %}">Rename</a>
+    <form method="post" action="{% url 'dashboard:category_delete' c.pk %}" class="inline" onsubmit="return confirm('Delete section?')">{% csrf_token %}<button class="btn sm danger">Delete</button></form></td></tr>
+  {% empty %}<tr><td colspan="4" class="muted">No sections yet – add Shirts, Pants, etc.</td></tr>{% endfor %}
+</table></div>
+{% endblock %}
