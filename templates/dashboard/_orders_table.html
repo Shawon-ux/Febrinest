@@ -14,6 +14,10 @@
           {% csrf_token %}<input type="hidden" name="payment_status" value="paid"><input type="hidden" name="next" value="{{ request.get_full_path }}">
           <button class="btn sm" title="Click after you have checked the TrxID in your bKash/Nagad/Rocket app">✓ Payment received</button>
         </form>
+        <form method="post" action="{% url 'dashboard:order_payment_failed' o.pk %}" class="inline" onsubmit="return confirm('Send the customer an SMS that payment was NOT received?')">
+          {% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
+          <button class="btn sm danger" title="Customer gets an SMS + notification">✗ Payment not received</button>
+        </form>
         {% endif %}
       {% endif %}
     </td>

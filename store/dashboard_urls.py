@@ -19,6 +19,8 @@ urlpatterns = [
     path("orders/<int:pk>/delete/", v.order_delete, name="order_delete"),
     path("admins/", v.admins, name="admins"),
     path("admins/<int:pk>/delete/", v.admin_delete, name="admin_delete"),
+    path("orders/<int:pk>/payment-failed/", v.order_payment_failed, name="order_payment_failed"),
+    path("announce/", v.announce, name="announce"),
     path("reviews/", v.reviews, name="reviews"),
     path("settings/", v.settings_view, name="settings"),
 ]

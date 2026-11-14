@@ -3,6 +3,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.db.models import Count, Q
+from django.urls import reverse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
@@ -10,7 +11,8 @@ from accounts.models import normalize_phone, phone_validator
 
 from .filters import filter_products
 from .forms import CheckoutForm
-from .models import CartItem, Category, Order, OrderItem, Product, Review, SiteSettings
+from .models import CartItem, Category, Notification, Order, OrderItem, Product, Review, SiteSettings
+from .notify import admins, notify
 
 
 SECTION_IMG = {
@@ -70,6 +72,7 @@ def review_add(request, pk):
         Review.objects.update_or_create(
             product=product, user=request.user, defaults={"rating": rating, "comment": comment})
         messages.success(request, "Thanks for your review!")
+        notify(admins(), f"New review on {product.name} ({rating}★)", comment[:120], product.get_absolute_url() + "#reviews")
     return redirect(f"{product.get_absolute_url()}#reviews")
 
 
@@ -189,6 +192,10 @@ def checkout(request):
                           price=i.product.price, quantity=i.quantity) for i in items
             ])
             request.user.cart_items.all().delete()
+        notify(admins(), f"New order #{order.pk} – ৳{order.total}",
+               f"{order.full_name} · {order.get_payment_method_display()}"
+               + (f" · TrxID {order.transaction_id}" if order.is_online else ""),
+               reverse("dashboard:order_detail", args=[order.pk]))
         return redirect("store:order_done", pk=order.pk)
 
     return render(request, "store/checkout.html", {
@@ -207,3 +214,19 @@ def order_done(request, pk):
 def my_orders(request):
     orders = request.user.orders.prefetch_related("items")
     return render(request, "store/my_orders.html", {"orders": orders})
+
+
+@login_required
+def notifications(request):
+    items = list(request.user.notifications.all()[:100])
+    request.user.notifications.filter(is_read=False).update(is_read=True)
+    return render(request, "store/notifications.html", {"items": items})
+
+
+@login_required
+@require_POST
+def notification_go(request, pk):
+    n = get_object_or_404(Notification, pk=pk, user=request.user)
+    n.is_read = True
+    n.save(update_fields=["is_read"])
+    return redirect(n.url or "store:notifications")

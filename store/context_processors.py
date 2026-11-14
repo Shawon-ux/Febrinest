@@ -10,7 +10,13 @@ def shop(request):
     pending = 0
     if request.user.is_authenticated and request.user.is_staff:
         pending = Order.objects.filter(status="pending").count()
+    unread, recent = 0, []
+    if request.user.is_authenticated:
+        unread = request.user.notifications.filter(is_read=False).count()
+        recent = list(request.user.notifications.all()[:6])
     return {
+        "unread_count": unread,
+        "recent_notifications": recent,
         "pending_orders": pending,
         "nav_categories": Category.objects.all(),
         "site": SiteSettings.get(),

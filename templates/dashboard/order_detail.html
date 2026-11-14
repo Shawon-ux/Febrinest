@@ -16,6 +16,11 @@
     {% endif %}
   </div>
   <aside class="co-sum">
+    {% if order.is_online and order.payment_status != 'paid' %}
+    <form method="post" action="{% url 'dashboard:order_payment_failed' order.pk %}" onsubmit="return confirm('Send the customer an SMS that payment was NOT received?')">
+      {% csrf_token %}<button class="btn danger block">✗ Payment not received (auto-SMS customer)</button>
+    </form>
+    {% endif %}
     <h3>Contact customer</h3>
     <a class="btn block" href="tel:{{ order.phone }}">📞 Call {{ order.phone }}</a>
     {% for label, msg, link in order.sms_templates %}

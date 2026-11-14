@@ -3,6 +3,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.db.models import Count, Sum
 from django.db.models.deletion import ProtectedError
 from django.utils.http import url_has_allowed_host_and_scheme
+from django.urls import reverse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
@@ -11,6 +12,8 @@ from accounts.models import User
 
 from .filters import filter_products
 from .forms import CategoryForm, ProductForm, SettingsForm
+from .notify import customers, notify
+from .sms import send_sms
 from .models import Category, Order, Product, ProductSize, Review, SiteSettings
 
 staff = staff_member_required(login_url="accounts:login")
@@ -43,9 +46,17 @@ def product_form(request, pk=None):
     initial = {}
     if not product and request.GET.get("category", "").isdigit():
         initial["category"] = int(request.GET["category"])
+    old_price = product.price if product else None
     form = ProductForm(request.POST or None, request.FILES or None, instance=product, initial=initial)
     if request.method == "POST" and form.is_valid():
         saved = form.save()
+        if saved.is_active:
+            if product is None:
+                notify(customers(), f"New arrival: {saved.name}",
+                       f"Now in {saved.category.name} · ৳{saved.price}", saved.get_absolute_url())
+            elif old_price is not None and saved.price < old_price:
+                notify(customers(), f"Price drop: {saved.name}",
+                       f"Now ৳{saved.price} (was ৳{old_price})", saved.get_absolute_url())
         messages.success(request, f"“{saved.name}” saved.")
         return redirect("dashboard:products")
     return render(request, "dashboard/product_form.html", {"form": form, "product": product})
@@ -128,7 +139,13 @@ def order_detail(request, pk):
             order.status = status
         if pay in dict(Order.PAYMENT_STATUSES):
             order.payment_status = pay
+        old_status, old_pay = Order.objects.values_list("status", "payment_status").get(pk=order.pk)
         order.save()
+        link = reverse("store:my_orders")
+        if order.payment_status != old_pay and order.payment_status == Order.PAY_PAID:
+            notify(order.user, f"Payment received for order #{order.pk}", "Thank you! We have confirmed your payment.", link)
+        if order.status != old_status:
+            notify(order.user, f"Order #{order.pk} is {order.get_status_display().lower()}", "", link)
         messages.success(request, f"Order #{order.pk} updated.")
         nxt = request.POST.get("next", "")
         if nxt and url_has_allowed_host_and_scheme(nxt, allowed_hosts={request.get_host()}):
@@ -193,3 +210,45 @@ def admin_delete(request, pk):
         target.delete()
         messages.success(request, f"Admin {name} removed.")
     return redirect("dashboard:admins")
+
+
+@staff
+@require_POST
+def order_payment_failed(request, pk):
+    """Admin could not find the payment: tell the customer by SMS + in-site notification."""
+    order = get_object_or_404(Order, pk=pk)
+    order.payment_status = Order.PAY_FAILED
+    order.save(update_fields=["payment_status"])
+    msg = (f"Febrinest: Hi {order.full_name}, we did not receive your payment for order #{order.pk} "
+           f"(Tk {order.total}). You may have given a wrong Transaction ID. We will call you soon for verification.")
+    sent, info = send_sms(order.phone, msg)
+    notify(order.user, f"Payment not received for order #{order.pk}",
+           "You may have entered a wrong Transaction ID. We will call you soon for verification.",
+           reverse("store:my_orders"))
+    if sent:
+        messages.success(request, f"SMS sent to {order.phone}: payment not received.")
+    else:
+        messages.warning(request, f"Customer notified on the website, but the SMS was NOT sent ({info}). "
+                                  "Use the ✉ SMS menu or call them.")
+    nxt = request.POST.get("next", "")
+    if nxt and url_has_allowed_host_and_scheme(nxt, allowed_hosts={request.get_host()}):
+        return redirect(nxt)
+    return redirect("dashboard:order_detail", pk=pk)
+
+
+@staff
+def announce(request):
+    if request.method == "POST":
+        title = request.POST.get("title", "").strip()[:140]
+        body = request.POST.get("body", "").strip()[:400]
+        link = request.POST.get("url", "").strip()
+        if not link.startswith("/"):
+            link = ""
+        if not title:
+            messages.error(request, "Please enter a title.")
+        else:
+            targets = list(customers())
+            notify(targets, title, body, link)
+            messages.success(request, f"Sent to {len(targets)} customer{'s' if len(targets) != 1 else ''}.")
+            return redirect("dashboard:announce")
+    return render(request, "dashboard/announce.html", {"n_customers": customers().count()})

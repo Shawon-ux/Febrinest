@@ -168,3 +168,10 @@ input,select,textarea{font-size:1rem;padding:12px 14px;border-radius:8px}
 .sms .menu{position:static;box-shadow:none;margin-top:6px;min-width:0;border-radius:8px}
 .trx{margin:6px 0;font-size:.85rem;background:#fff8e1;border-radius:6px;padding:3px 8px;display:inline-block;word-break:break-all;max-width:220px}
 .trxbox{background:#fff8e1;border:1px dashed #d9b44a;border-radius:10px;padding:12px 14px}.trxbox b{display:block;font-size:1.3rem;word-break:break-all}
+.bell{position:relative}.bell summary{list-style:none;cursor:pointer;font-size:1.25rem}.bell summary::-webkit-details-marker{display:none}
+.bell-menu{position:absolute;right:0;top:130%;width:340px;max-width:88vw;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 36px rgba(0,0,0,.18);z-index:30;max-height:70vh;overflow:auto}
+.bell-h{display:flex;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--line)}
+.bell-i{display:block;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:12px 14px;cursor:pointer;font:inherit}
+.bell-i:hover{background:var(--soft)}.bell-i.new{background:#f2f7ff}.bell-i span{display:block;color:var(--mut);font-size:.9rem}.bell-i small{color:#999}
+.pad{padding:14px}
+.notif{display:flex;justify-content:space-between;gap:14px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:14px 18px;margin-bottom:10px}.notif.new{background:#f2f7ff;border-color:#c8dcff}

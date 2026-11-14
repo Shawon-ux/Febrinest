@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Notifications – Febrinest{% endblock %}
+{% block content %}
+<h1 class="h1">Notifications</h1>
+{% for n in items %}
+<div class="notif {% if not n.is_read %}new{% endif %}">
+  <div><b>{{ n.title }}</b>{% if n.body %}<div class="muted">{{ n.body }}</div>{% endif %}<small class="muted">{{ n.created_at|date:"d M, H:i" }}</small></div>
+  {% if n.url %}<a class="btn sm ghost" href="{{ n.url }}">Open</a>{% endif %}
+</div>
+{% empty %}<p class="empty">Nothing here yet.</p>{% endfor %}
+{% endblock %}

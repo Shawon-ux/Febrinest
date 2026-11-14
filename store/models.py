@@ -152,8 +152,9 @@ class Order(models.Model):
         (PAY_ROCKET, "Rocket (online)"),
     ]
 
-    PAY_UNPAID, PAY_VERIFY, PAY_PAID = "unpaid", "verifying", "paid"
-    PAYMENT_STATUSES = [(PAY_UNPAID, "Unpaid"), (PAY_VERIFY, "Awaiting verification"), (PAY_PAID, "Paid")]
+    PAY_UNPAID, PAY_VERIFY, PAY_PAID, PAY_FAILED = "unpaid", "verifying", "paid", "failed"
+    PAYMENT_STATUSES = [(PAY_UNPAID, "Unpaid"), (PAY_VERIFY, "Awaiting verification"), (PAY_PAID, "Paid"),
+                        (PAY_FAILED, "Payment not received")]
 
     STATUSES = [
         ("pending", "Pending"),
@@ -228,3 +229,15 @@ class Review(models.Model):
 
     def __str__(self):
         return f"{self.user} on {self.product} ({self.rating}★)"
+
+
+class Notification(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="notifications")
+    title = models.CharField(max_length=140)
+    body = models.CharField(max_length=400, blank=True)
+    url = models.CharField(max_length=300, blank=True)
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at", "-id"]

@@ -88,6 +88,9 @@ if DEBUG:
 MEDIA_URL = "/media/"
 MEDIA_ROOT = Path(os.environ.get("MEDIA_ROOT", BASE_DIR / "media"))
 
+# Automatic SMS (see store/sms.py). Leave empty until you have an SMS provider.
+SMS_URL = os.environ.get("SMS_URL", "")
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 if not DEBUG:

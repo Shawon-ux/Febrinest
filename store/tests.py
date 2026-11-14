@@ -194,3 +194,53 @@ class TrxVisible(TestCase):
         self.assertIn("TRX9Z88", self.client.get(reverse("dashboard:order_detail", args=[o.pk])).content.decode())
         r = self.client.post(reverse("dashboard:order_detail", args=[o.pk]), {"payment_status": "paid", "next": "/dashboard/orders/"})
         self.assertEqual(r.url, "/dashboard/orders/"); o.refresh_from_db(); self.assertEqual(o.payment_status, "paid")
+
+
+from unittest.mock import patch
+
+from .models import Notification
+
+
+class Notifications(TestCase):
+    def setUp(self):
+        self.admin = User.objects.create_user(username="a", full_name="A", email="a@g.com", phone="01711111111", password="x123456", is_staff=True)
+        self.cust = User.objects.create_user(username="c", full_name="Cust", email="c@g.com", phone="01922222222", password="x123456")
+        self.cat = Category.objects.create(name="Jacket")
+
+    def test_new_product_and_price_drop_notify_customers_only(self):
+        self.client.force_login(self.admin)
+        self.client.post(reverse("dashboard:product_new"), {"category": self.cat.pk, "name": "Parka", "price": "900", "is_active": "on", "size_M": "available"})
+        p = Product.objects.get()
+        self.assertEqual(Notification.objects.filter(user=self.cust, title__startswith="New arrival").count(), 1)
+        self.assertEqual(Notification.objects.filter(user=self.admin).count(), 0)
+        self.client.post(reverse("dashboard:product_edit", args=[p.pk]), {"category": self.cat.pk, "name": "Parka", "price": "700", "is_active": "on", "size_M": "available"})
+        self.assertEqual(Notification.objects.filter(user=self.cust, title__startswith="Price drop").count(), 1)
+
+    def test_order_notifies_admin_and_payment_failed_sends_sms(self):
+        p = Product.objects.create(category=self.cat, name="P", price=100); p.sizes.create(size="M")
+        self.client.force_login(self.cust)
+        self.client.post(reverse("store:cart_add", args=[p.pk]), {"size": "M"})
+        self.client.post(reverse("store:checkout"), {"full_name": "Cust", "phone": "01922222222", "address": "x", "area": "inside",
+                                                     "payment_method": "bkash", "transaction_id": "WRONG1"})
+        self.assertEqual(Notification.objects.filter(user=self.admin, title__startswith="New order").count(), 1)
+        o = Order.objects.get()
+        self.client.force_login(self.admin)
+        with patch("store.dashboard.send_sms", return_value=(True, "ok")) as m:
+            self.client.post(reverse("dashboard:order_payment_failed", args=[o.pk]))
+        self.assertEqual(m.call_args[0][0], "01922222222")
+        self.assertIn("wrong Transaction ID", m.call_args[0][1]); self.assertIn("call you soon", m.call_args[0][1])
+        o.refresh_from_db(); self.assertEqual(o.payment_status, "failed")
+        self.assertTrue(Notification.objects.filter(user=self.cust, title__startswith="Payment not received").exists())
+        # paid -> customer notified
+        self.client.post(reverse("dashboard:order_detail", args=[o.pk]), {"payment_status": "paid"})
+        self.assertTrue(Notification.objects.filter(user=self.cust, title__startswith="Payment received").exists())
+
+    def test_announcement_bell_and_read(self):
+        self.client.force_login(self.admin)
+        self.client.post(reverse("dashboard:announce"), {"title": "20% off Panjabi", "body": "Code EID20", "url": "/shop/"})
+        self.client.force_login(self.cust)
+        self.assertIn("20% off Panjabi", self.client.get("/").content.decode())
+        n = Notification.objects.get(user=self.cust)
+        r = self.client.post(reverse("store:notification_go", args=[n.pk]))
+        self.assertEqual(r.url, "/shop/"); n.refresh_from_db(); self.assertTrue(n.is_read)
+        self.assertEqual(self.client.get(reverse("store:notifications")).status_code, 200)

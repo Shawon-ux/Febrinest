@@ -18,6 +18,19 @@
     </nav>
     <div class="right">
       {% if user.is_authenticated %}
+      <details class="bell">
+        <summary>🔔{% if unread_count %}<b class="cart-b">{{ unread_count }}</b>{% endif %}</summary>
+        <div class="bell-menu">
+          <div class="bell-h"><b>Notifications</b><a href="{% url 'store:notifications' %}">See all</a></div>
+          {% for n in recent_notifications %}
+          <form method="post" action="{% url 'store:notification_go' n.pk %}">{% csrf_token %}
+            <button class="bell-i {% if not n.is_read %}new{% endif %}"><b>{{ n.title }}</b>{% if n.body %}<span>{{ n.body }}</span>{% endif %}<small>{{ n.created_at|timesince }} ago</small></button>
+          </form>
+          {% empty %}<p class="muted pad">No notifications yet.</p>{% endfor %}
+        </div>
+      </details>
+      {% endif %}
+      {% if user.is_authenticated %}
         {% if user.is_staff %}
           <a href="{% url 'dashboard:orders' %}">Orders{% if pending_orders %}<b class="cart-b">{{ pending_orders }}</b>{% endif %}</a>
           <a class="pill" href="{% url 'dashboard:home' %}">Admin panel</a>

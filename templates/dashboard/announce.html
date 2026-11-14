@@ -1,0 +1,13 @@
+{% extends "dashboard/base.html" %}
+{% block dash %}
+<h1 class="h1">Send an announcement</h1>
+<p class="muted">Appears in the 🔔 notifications of all {{ n_customers }} customer{{ n_customers|pluralize }} — use it for discounts, offers and news.
+New products and price drops are announced automatically.</p>
+<form method="post" class="narrow">
+  {% csrf_token %}
+  <div class="field"><label>Title</label><input name="title" maxlength="140" placeholder="e.g. 20% off all Panjabi this Eid!" required></div>
+  <div class="field"><label>Details (optional)</label><textarea name="body" rows="3" maxlength="400" placeholder="Use code EID20 · valid till Friday"></textarea></div>
+  <div class="field"><label>Link (optional)</label><input name="url" placeholder="/shop/panjabi/"><small>Where the customer lands when they click it.</small></div>
+  <button class="btn">Send to all customers</button>
+</form>
+{% endblock %}
