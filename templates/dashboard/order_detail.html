@@ -9,9 +9,22 @@
     {% for i in order.items.all %}<div class="li"><span>{{ i.name }} <small>({{ i.size }}) × {{ i.quantity }} @ ৳{{ i.price }}</small></span><b>৳{{ i.line_total }}</b></div>{% endfor %}
     <div class="li"><span>Delivery</span><b>৳{{ order.delivery_charge }}</b></div>
     <div class="li tot"><span>Total</span><b>৳{{ order.total }}</b></div>
-    <p>Payment: <b>{{ order.get_payment_method_display }}</b>{% if order.transaction_id %} · TrxID: <b>{{ order.transaction_id }}</b>{% endif %}</p>
+    <h3>Payment</h3>
+    <p><b>{{ order.get_payment_method_display }}</b> · <span class="badge {% if order.payment_status == 'paid' %}ok{% endif %}">{{ order.get_payment_status_display }}</span></p>
+    {% if order.is_online %}
+    <div class="trxbox"><small>Customer's number / TrxID — match it in your {{ order.get_payment_method_display }} app, expected amount <b>৳{{ order.total }}</b></small><b>{{ order.transaction_id|default:"(not provided)" }}</b></div>
+    {% endif %}
   </div>
   <aside class="co-sum">
+    <h3>Contact customer</h3>
+    <a class="btn block" href="tel:{{ order.phone }}">📞 Call {{ order.phone }}</a>
+    {% for label, msg, link in order.sms_templates %}
+    <div class="smsrow">
+      <a class="btn ghost block" href="{{ link }}">✉ {{ label }}</a>
+      <button type="button" class="btn sm ghost" data-copy="{{ msg }}">Copy text</button>
+    </div>
+    {% endfor %}
+    <p class="muted small">“SMS” opens your phone's messaging app with the text ready. On a PC, use “Copy text” and paste it into your SMS/WhatsApp tool.</p>
     <h3>Update</h3>
     <form method="post">
       {% csrf_token %}
@@ -19,6 +32,12 @@
       <div class="field"><label>Payment status</label><select name="payment_status">{% for k,l in pay_statuses %}<option value="{{ k }}" {% if order.payment_status == k %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></div>
       <button class="btn block">Save</button>
     </form>
+    <form method="post" action="{% url 'dashboard:order_delete' order.pk %}" onsubmit="return confirm('Delete this order? Use this for fake orders. It cannot be undone.')">
+      {% csrf_token %}<button class="btn danger block">Delete order (fake / spam)</button>
+    </form>
   </aside>
 </div>
 {% endblock %}
+{% block scripts %}<script>
+document.querySelectorAll('[data-copy]').forEach(b=>b.addEventListener('click',()=>{navigator.clipboard.writeText(b.dataset.copy);b.textContent='Copied ✓';}));
+</script>{% endblock %}

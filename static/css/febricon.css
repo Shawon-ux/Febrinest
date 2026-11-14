@@ -159,3 +159,12 @@ input,select,textarea{font-size:1rem;padding:12px 14px;border-radius:8px}
 .dash-nav a{font-size:1rem}
 @media(max-width:860px){.hero{grid-template-columns:1fr}.hero-img{height:380px;order:-1}.hero-txt{padding:34px 24px}
 .auth2,.rv-wrap{grid-template-columns:1fr}.auth-pic{min-height:200px}.auth-form{padding:30px 22px}.look{grid-template-columns:1fr}.two{grid-template-columns:1fr}}
+.cart-b{background:var(--red);color:#fff;border-radius:99px;font-size:.7rem;padding:1px 7px;margin-left:5px}
+.sms{display:inline-block;position:relative}.sms summary{list-style:none}.sms summary::-webkit-details-marker{display:none}
+.sms .menu{position:absolute;right:0;top:110%;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.15);z-index:20;min-width:210px;padding:6px}
+.sms .menu a{display:block;padding:9px 12px;border-radius:6px;text-decoration:none}.sms .menu a:hover{background:var(--soft)}
+.smsrow{display:flex;gap:6px;align-items:center;margin-top:8px}.smsrow .btn.block{margin:0;flex:1}
+.small{font-size:.85rem}.size em.ok{color:var(--grn)}
+.sms .menu{position:static;box-shadow:none;margin-top:6px;min-width:0;border-radius:8px}
+.trx{margin:6px 0;font-size:.85rem;background:#fff8e1;border-radius:6px;padding:3px 8px;display:inline-block;word-break:break-all;max-width:220px}
+.trxbox{background:#fff8e1;border:1px dashed #d9b44a;border-radius:10px;padding:12px 14px}.trxbox b{display:block;font-size:1.3rem;word-break:break-all}

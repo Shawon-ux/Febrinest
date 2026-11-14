@@ -19,7 +19,7 @@ def register(request):
     if request.method == "POST" and form.is_valid():
         user = form.save()
         login(request, user, backend="accounts.backends.PhoneOrEmailBackend")
-        messages.success(request, f"Welcome to Febricon, {user.full_name}!")
+        messages.success(request, f"Welcome to Febrinest, {user.full_name}!")
         return redirect(_next(request) or "store:home")
     return render(request, "accounts/register.html", {"form": form, "next": _next(request)})
 

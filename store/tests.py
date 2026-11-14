@@ -119,3 +119,78 @@ class ReviewFlow(TestCase):
         self.assertEqual(p.reviews.count(), 0)
         self.assertEqual(self.client.get(reverse("dashboard:product_new") + f"?category={cat.pk}").context["form"]["category"].value(), cat.pk)
         self.assertEqual(self.client.get(reverse("dashboard:reviews")).status_code, 200)
+
+
+class AdminOrders(TestCase):
+    def test_admin_orders_sms_delete_and_no_shopping(self):
+        cat = Category.objects.create(name="Shirt")
+        p = Product.objects.create(category=cat, name="S", price=100); p.sizes.create(size="M")
+        cust = User.objects.create_user(username="c", full_name="Cust", email="c@g.com", phone="01922222222", password="x123456")
+        admin = User.objects.create_user(username="a", full_name="A", email="a@g.com", phone="01711111111", password="x123456", is_staff=True)
+        o = Order.objects.create(user=cust, full_name="Cust", phone="01922222222", address="x", area="inside",
+                                 subtotal=100, delivery_charge=60, total=160, payment_method="bkash")
+        self.client.force_login(admin)
+        html = self.client.get(reverse("dashboard:orders")).content.decode()
+        self.assertIn("tel:01922222222", html); self.assertIn("sms:01922222222?body=", html)
+        self.assertIn("Payment not received", html)
+        home = self.client.get("/").content.decode()
+        self.assertIn(">Orders", home); self.assertNotIn('class="cart"', home)
+        self.assertEqual(self.client.post(reverse("store:cart_add", args=[p.pk]), {"size": "M"}).status_code, 302)
+        self.assertEqual(CartItem.objects.count(), 0)
+        self.assertEqual(self.client.get(reverse("store:checkout")).status_code, 302)
+        page = self.client.get(p.get_absolute_url()).content.decode()
+        self.assertNotIn("Add to cart", page); self.assertIn("Edit product", page)
+        self.client.force_login(cust)
+        self.assertEqual(self.client.post(reverse("dashboard:order_delete", args=[o.pk])).status_code, 302)
+        self.assertTrue(Order.objects.filter(pk=o.pk).exists())  # customers can't delete
+        self.client.force_login(admin)
+        self.client.post(reverse("dashboard:order_delete", args=[o.pk]))
+        self.assertFalse(Order.objects.filter(pk=o.pk).exists())
+
+
+class AdminManagement(TestCase):
+    def setUp(self):
+        self.main = User.objects.create_user(username="m", full_name="Main", email="main@g.com", phone="01700000000",
+                                             password="x123456", is_staff=True, is_superuser=True)
+
+    def test_main_admin_protected_and_new_admin_login(self):
+        self.assertTrue(User.objects.get(pk=self.main.pk).is_main_admin)
+        self.client.force_login(self.main)
+        r = self.client.post(reverse("dashboard:admins"), {"full_name": "Sub", "email": "sub@gmail.com",
+            "phone": "01855555555", "password": "pass1234", "confirm_password": "pass1234"})
+        self.assertEqual(r.status_code, 302)
+        sub = User.objects.get(email="sub@gmail.com"); self.assertTrue(sub.is_staff); self.assertFalse(sub.is_main_admin)
+        self.client.logout()
+        for ident in ("01855555555", "sub@gmail.com"):
+            r = self.client.post(reverse("accounts:login"), {"identifier": ident, "password": "pass1234"})
+            self.assertEqual(r.url, reverse("dashboard:home"), ident); self.client.logout()
+        # sub-admin cannot remove main admin
+        self.client.force_login(sub)
+        self.client.post(reverse("dashboard:admin_delete", args=[self.main.pk]))
+        self.assertTrue(User.objects.filter(pk=self.main.pk).exists())
+        # main admin cannot be removed even by itself; can remove others
+        self.client.force_login(self.main)
+        self.client.post(reverse("dashboard:admin_delete", args=[self.main.pk]))
+        self.assertTrue(User.objects.filter(pk=self.main.pk).exists())
+        with self.assertRaises(Exception):
+            self.main.delete()
+        self.client.post(reverse("dashboard:admin_delete", args=[sub.pk]))
+        self.assertFalse(User.objects.filter(pk=sub.pk).exists())
+
+    def test_customer_cannot_manage_admins(self):
+        c = User.objects.create_user(username="c", full_name="C", email="c@g.com", phone="01922222222", password="x123456")
+        self.client.force_login(c)
+        self.assertEqual(self.client.get(reverse("dashboard:admins")).status_code, 302)
+
+
+class TrxVisible(TestCase):
+    def test_trx_shown_and_mark_paid(self):
+        cust = User.objects.create_user(username="c", full_name="C", email="c@g.com", phone="01922222222", password="x123456")
+        admin = User.objects.create_user(username="a", full_name="A", email="a@g.com", phone="01711111111", password="x123456", is_staff=True)
+        o = Order.objects.create(user=cust, full_name="C", phone="01922222222", address="x", area="inside", subtotal=100,
+                                 delivery_charge=60, total=160, payment_method="bkash", payment_status="verifying", transaction_id="TRX9Z88")
+        self.client.force_login(admin)
+        self.assertIn("TRX9Z88", self.client.get(reverse("dashboard:orders")).content.decode())
+        self.assertIn("TRX9Z88", self.client.get(reverse("dashboard:order_detail", args=[o.pk])).content.decode())
+        r = self.client.post(reverse("dashboard:order_detail", args=[o.pk]), {"payment_status": "paid", "next": "/dashboard/orders/"})
+        self.assertEqual(r.url, "/dashboard/orders/"); o.refresh_from_db(); self.assertEqual(o.payment_status, "paid")

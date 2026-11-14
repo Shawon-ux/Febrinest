@@ -83,8 +83,16 @@ def review_delete(request, pk):
 
 
 # ---------------------------------------------------------------- cart
+def _staff_blocked(request):
+    if request.user.is_authenticated and request.user.is_staff:
+        messages.info(request, "Admin accounts can't shop. Manage products and orders from the dashboard.")
+        return redirect("dashboard:home")
+
+
 @login_required
 def cart(request):
+    if (r := _staff_blocked(request)):
+        return r
     items = list(request.user.cart_items.select_related("product"))
     for i in items:
         i.ok = i.size_ok
@@ -98,6 +106,8 @@ def cart(request):
 
 @require_POST
 def cart_add(request, pk):
+    if (r := _staff_blocked(request)):
+        return r
     if not request.user.is_authenticated:
         messages.info(request, "Please log in (phone number required) to add items to your cart.")
         return redirect(f"/accounts/login/?next={request.POST.get('next') or '/'}")
@@ -145,6 +155,8 @@ def cart_remove(request, pk):
 # ---------------------------------------------------------------- checkout
 @login_required
 def checkout(request):
+    if (r := _staff_blocked(request)):
+        return r
     items = list(request.user.cart_items.select_related("product"))
     if not items:
         messages.info(request, "Your cart is empty.")

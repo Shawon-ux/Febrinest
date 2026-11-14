@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
-{% block title %}Login – Febricon{% endblock %}
+{% block title %}Login – Febrinest{% endblock %}
 {% block content %}
 <div class="auth2">
   <div class="auth-pic" style="background-image:url('{% static 'img/model-jacket.jpg' %}')">
@@ -17,7 +17,7 @@
       {% include "_field.html" with field=form.password %}
       <button class="btn lg block">Login</button>
     </form>
-    <p class="center muted">New to Febricon? <a href="{% url 'accounts:register' %}{% if next %}?next={{ next|urlencode }}{% endif %}"><b>Create an account</b></a></p>
+    <p class="center muted">New to Febrinest? <a href="{% url 'accounts:register' %}{% if next %}?next={{ next|urlencode }}{% endif %}"><b>Create an account</b></a></p>
   </div>
 </div>
 {% endblock %}

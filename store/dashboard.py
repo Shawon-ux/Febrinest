@@ -2,8 +2,12 @@ from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.db.models import Count, Sum
 from django.db.models.deletion import ProtectedError
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
+
+from accounts.forms import AdminCreateForm
+from accounts.models import User
 
 from .filters import filter_products
 from .forms import CategoryForm, ProductForm, SettingsForm
@@ -16,11 +20,9 @@ staff = staff_member_required(login_url="accounts:login")
 def home(request):
     return render(request, "dashboard/home.html", {
         "n_products": Product.objects.count(),
-        "n_orders": Order.objects.count(),
-        "n_pending": Order.objects.filter(status="pending").count(),
-        "n_verify": Order.objects.filter(payment_status=Order.PAY_VERIFY).count(),
-        "revenue": Order.objects.exclude(status="cancelled").aggregate(t=Sum("total"))["t"] or 0,
-        "recent": Order.objects.select_related("user")[:8],
+        "n_sections": Category.objects.count(),
+        "n_reviews": Review.objects.count(),
+        "n_admins": User.objects.filter(is_staff=True).count(),
     })
 
 
@@ -104,7 +106,7 @@ def category_delete(request, pk):
 # ------------------------------------------------------------ orders
 @staff
 def orders(request):
-    qs = Order.objects.select_related("user")
+    qs = Order.objects.select_related("user").prefetch_related("items")
     status = request.GET.get("status", "")
     pay = request.GET.get("payment", "")
     if status:
@@ -128,10 +130,22 @@ def order_detail(request, pk):
             order.payment_status = pay
         order.save()
         messages.success(request, f"Order #{order.pk} updated.")
+        nxt = request.POST.get("next", "")
+        if nxt and url_has_allowed_host_and_scheme(nxt, allowed_hosts={request.get_host()}):
+            return redirect(nxt)
         return redirect("dashboard:order_detail", pk=pk)
     return render(request, "dashboard/order_detail.html", {
         "order": order, "statuses": Order.STATUSES, "pay_statuses": Order.PAYMENT_STATUSES,
     })
+
+
+@staff
+@require_POST
+def order_delete(request, pk):
+    order = get_object_or_404(Order, pk=pk)
+    order.delete()
+    messages.success(request, f"Order #{pk} deleted.")
+    return redirect("dashboard:orders")
 
 
 # ------------------------------------------------------------ settings
@@ -150,3 +164,32 @@ def reviews(request):
     return render(request, "dashboard/reviews.html", {
         "reviews": Review.objects.select_related("user", "product"),
     })
+
+
+# ------------------------------------------------------------ admins
+@staff
+def admins(request):
+    form = AdminCreateForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        u = form.save()
+        messages.success(request, f"{u.full_name} is now an admin. They can log in with {u.phone} or {u.email}.")
+        return redirect("dashboard:admins")
+    return render(request, "dashboard/admins.html", {
+        "form": form,
+        "admins": User.objects.filter(is_staff=True).order_by("-is_main_admin", "date_joined"),
+    })
+
+
+@staff
+@require_POST
+def admin_delete(request, pk):
+    target = get_object_or_404(User, pk=pk, is_staff=True)
+    if target.is_main_admin:
+        messages.error(request, "The main admin cannot be removed.")
+    elif target.pk == request.user.pk:
+        messages.error(request, "You can't remove your own account while logged in.")
+    else:
+        name = target.full_name
+        target.delete()
+        messages.success(request, f"Admin {name} removed.")
+    return redirect("dashboard:admins")

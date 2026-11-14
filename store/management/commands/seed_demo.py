@@ -8,8 +8,8 @@ from django.core.management.base import BaseCommand
 
 from store.models import Category, Product, SiteSettings
 
-ADMIN = dict(phone="01700000000", email="admin@febricon.com", full_name="Febricon Admin")
-ADMIN_PASSWORD = "Febricon@2026"
+ADMIN = dict(phone="01700000000", email="admin@febricon.com", full_name="Febrinest Admin")
+ADMIN_PASSWORD = "Febrinest@2026"
 
 TOP = ["S", "M", "L", "XL", "XXL"]
 PANT = ["28", "30", "32", "34", "36"]
@@ -51,7 +51,7 @@ class Command(BaseCommand):
         User = get_user_model()
         u, created = User.objects.get_or_create(phone=ADMIN["phone"], defaults=dict(
             username=ADMIN["phone"], email=ADMIN["email"], full_name=ADMIN["full_name"]))
-        u.is_staff = u.is_superuser = True
+        u.is_staff = u.is_superuser = u.is_main_admin = True
         u.set_password(ADMIN_PASSWORD)
         u.save()
 
@@ -71,7 +71,7 @@ class Command(BaseCommand):
                     continue
                 p = Product.objects.create(
                     category=cat, name=name, price=price, old_price=old,
-                    description=f"{name} from Febricon. Soft, durable fabric with a clean modern fit. Demo product.")
+                    description=f"{name} from Febrinest. Soft, durable fabric with a clean modern fit. Demo product.")
                 attach_photo(p)
                 blocked = random.choice(sizes[:-1])  # one size stocked out so the lock is visible
                 for sz in sizes:

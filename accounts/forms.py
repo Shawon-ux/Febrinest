@@ -60,3 +60,14 @@ class LoginForm(forms.Form):
             if self.user is None:
                 raise forms.ValidationError("Wrong phone/email or password.")
         return data
+
+
+class AdminCreateForm(RegisterForm):
+    """Main admin creates another admin: name, email, phone, password."""
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.is_staff = True
+        if commit:
+            user.save()
+        return user

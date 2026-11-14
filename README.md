@@ -1,4 +1,4 @@
-# Febricon – Django clothing store
+# Febrinest – Django clothing store
 
 ## Run locally (Windows)
 ```

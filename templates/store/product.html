@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ product.name }} – Febricon{% endblock %}
+{% block title %}{{ product.name }} – Febrinest{% endblock %}
 {% block content %}
 <div class="pd">
   <div class="pd-img">
@@ -9,11 +9,14 @@
     <a class="crumb" href="{{ product.category.get_absolute_url }}">← {{ product.category.name }}</a>
     <h1>{{ product.name }}</h1>
     {% with rs=product.rating_stats %}{% if rs %}<a href="#reviews" class="stars">★ {{ rs.avg }} <span>({{ rs.n }} review{{ rs.n|pluralize }})</span></a>{% endif %}{% endwith %}
-    {% if user.is_staff %}<p><a class="btn sm ghost" href="{% url 'dashboard:product_edit' product.pk %}">Edit this product</a></p>{% endif %}
     <div class="price">৳{{ product.price }}{% if product.on_sale %} <s>৳{{ product.old_price }}</s>{% endif %}</div>
     {% if product.description %}<p class="desc">{{ product.description|linebreaksbr }}</p>{% endif %}
 
-    {% if product.in_stock %}
+    {% if user.is_staff %}
+      <div class="label">Stock by size <small class="muted">(admin view – click a size in Products to lock/unlock)</small></div>
+      <div class="sizes">{% for s in product.sizes.all %}<label class="size {% if not s.available %}off{% endif %}"><span>{{ s.size }}</span>{% if not s.available %}<em>Blocked</em>{% else %}<em class="ok">In stock</em>{% endif %}</label>{% endfor %}</div>
+      <div class="actions"><a class="btn" href="{% url 'dashboard:product_edit' product.pk %}">Edit product / price / sizes</a></div>
+    {% elif product.in_stock %}
     <form method="post" action="{% url 'store:cart_add' product.pk %}">
       {% csrf_token %}
       <input type="hidden" name="next" value="{{ request.path }}">

@@ -37,7 +37,7 @@ class SiteSettings(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return "Febricon settings"
+        return "Febrinest settings"
 
 
 class Category(models.Model):
@@ -183,6 +183,20 @@ class Order(models.Model):
     @property
     def is_online(self):
         return self.payment_method != self.PAY_COD
+
+    @property
+    def sms_templates(self):
+        """(label, message, sms: link) – opens the admin's phone/SMS app with the text filled in."""
+        from urllib.parse import quote
+        n, i, t = self.full_name, self.pk, self.total
+        method = self.get_payment_method_display().split(" (")[0]
+        msgs = [
+            ("Order confirmed", f"Febrinest: Hi {n}, your order #{i} (Tk {t}) is confirmed. We will deliver it soon. Thank you!"),
+            ("Payment not received", f"Febrinest: Hi {n}, we have not received the payment for order #{i} (Tk {t}). Please send it via {method} and reply with your TrxID."),
+            ("Order shipped", f"Febrinest: Hi {n}, your order #{i} has been shipped and will reach you shortly."),
+            ("Order cancelled", f"Febrinest: Hi {n}, your order #{i} has been cancelled. Call us if this is a mistake."),
+        ]
+        return [(label, msg, f"sms:{self.phone}?body={quote(msg)}") for label, msg in msgs]
 
     def __str__(self):
         return f"Order #{self.pk}"

@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}Febricon – Wear the difference{% endblock %}</title>
+  <title>{% block title %}Febrinest – Wear the difference{% endblock %}</title>
   <link rel="stylesheet" href="{% static 'css/febricon.css' %}">
 </head>
 <body>
 <header class="nav">
   <div class="wrap nav-in">
-    <a href="{% url 'store:home' %}" class="logo">FEBRICON</a>
+    <a href="{% url 'store:home' %}" class="logo">FEBRINEST</a>
     <nav class="links" id="links">
       {% if user.is_authenticated %}
       <a href="{% url 'store:shop' %}">All</a>
@@ -18,14 +18,18 @@
     </nav>
     <div class="right">
       {% if user.is_authenticated %}
-        {% if user.is_staff %}<a class="pill" href="{% url 'dashboard:home' %}">Admin</a>{% endif %}
-        <a href="{% url 'store:my_orders' %}">Orders</a>
+        {% if user.is_staff %}
+          <a href="{% url 'dashboard:orders' %}">Orders{% if pending_orders %}<b class="cart-b">{{ pending_orders }}</b>{% endif %}</a>
+          <a class="pill" href="{% url 'dashboard:home' %}">Admin panel</a>
+        {% else %}
+          <a href="{% url 'store:my_orders' %}">My orders</a>
+        {% endif %}
         <form method="post" action="{% url 'accounts:logout' %}" class="inline">{% csrf_token %}<button class="link">Logout</button></form>
       {% else %}
         <a href="{% url 'accounts:login' %}">Login</a>
         <a class="pill" href="{% url 'accounts:register' %}">Sign up</a>
       {% endif %}
-      {% if user.is_authenticated %}<a href="{% url 'store:cart' %}" class="cart">Cart{% if cart_count %}<b>{{ cart_count }}</b>{% endif %}</a>{% endif %}
+      {% if user.is_authenticated and not user.is_staff %}<a href="{% url 'store:cart' %}" class="cart">Cart{% if cart_count %}<b>{{ cart_count }}</b>{% endif %}</a>{% endif %}
     </div>
   </div>
 </header>
@@ -39,7 +43,7 @@
 <main class="wrap">{% block content %}{% endblock %}</main>
 
 <footer class="foot">
-  <div class="wrap">© Febricon · Dhaka, Bangladesh{% if site.contact_phone %} · Call {{ site.contact_phone }}{% endif %}</div>
+  <div class="wrap">© Febrinest · Dhaka, Bangladesh{% if site.contact_phone %} · Call {{ site.contact_phone }}{% endif %}</div>
 </footer>
 {% block scripts %}{% endblock %}
 </body>

@@ -1,12 +1,12 @@
 {% extends "base.html" %}
-{% block title %}Admin – Febricon{% endblock %}
+{% block title %}Admin – Febrinest{% endblock %}
 {% block content %}
 <div class="dash-nav">
   <a href="{% url 'dashboard:home' %}">Overview</a>
   <a href="{% url 'dashboard:products' %}">Products</a>
   <a href="{% url 'dashboard:categories' %}">Sections</a>
-  <a href="{% url 'dashboard:orders' %}">Orders</a>
   <a href="{% url 'dashboard:reviews' %}">Reviews</a>
+  <a href="{% url 'dashboard:admins' %}">Admins</a>
   <a href="{% url 'dashboard:settings' %}">Delivery &amp; payment</a>
 </div>
 {% block dash %}{% endblock %}

@@ -1,0 +1,37 @@
+{% extends "dashboard/base.html" %}
+{% block dash %}
+<h1 class="h1">Admins</h1>
+<div class="co">
+  <div class="co-main">
+    <div class="tw"><table class="tbl">
+      <tr><th>Name</th><th>Phone</th><th>Email</th><th></th></tr>
+      {% for a in admins %}
+      <tr>
+        <td><b>{{ a.full_name }}</b> {% if a.is_main_admin %}<span class="badge ok">Main admin</span>{% endif %}{% if a.pk == user.pk %} <span class="badge">You</span>{% endif %}</td>
+        <td>{{ a.phone }}</td><td>{{ a.email }}</td>
+        <td>
+          {% if a.is_main_admin %}<small class="muted">Protected</small>
+          {% elif a.pk != user.pk %}
+          <form method="post" action="{% url 'dashboard:admin_delete' a.pk %}" onsubmit="return confirm('Remove admin {{ a.full_name|escapejs }}? Their account will be deleted.')">
+            {% csrf_token %}<button class="btn sm danger">Remove</button></form>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </table></div>
+  </div>
+  <aside class="co-sum">
+    <h3>Add a new admin</h3>
+    <form method="post">
+      {% csrf_token %}
+      {% include "_field.html" with field=form.full_name %}
+      {% include "_field.html" with field=form.email %}
+      {% include "_field.html" with field=form.phone %}
+      {% include "_field.html" with field=form.password %}
+      {% include "_field.html" with field=form.confirm_password %}
+      <button class="btn block">Create admin</button>
+      <p class="muted small">The new admin logs in with their phone number <i>or</i> email, plus this password.</p>
+    </form>
+  </aside>
+</div>
+{% endblock %}

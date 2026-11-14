@@ -1,4 +1,5 @@
 from django.contrib.auth.models import AbstractUser
+from django.core.exceptions import PermissionDenied
 from django.core.validators import RegexValidator
 from django.db import models
 
@@ -21,6 +22,9 @@ class User(AbstractUser):
     email = models.EmailField(unique=True)
     phone = models.CharField(max_length=14, unique=True, validators=[phone_validator])
 
+    # The owner account. Nobody (including other admins) can remove or demote it.
+    is_main_admin = models.BooleanField(default=False, editable=False)
+
     REQUIRED_FIELDS = ["email", "phone", "full_name"]
 
     def save(self, *args, **kwargs):
@@ -28,7 +32,16 @@ class User(AbstractUser):
         self.email = (self.email or "").lower()
         if not self.username:
             self.username = self.phone
+        if self.is_superuser and not self.is_main_admin and not User.objects.filter(is_main_admin=True).exists():
+            self.is_main_admin = True
+        if self.is_main_admin:
+            self.is_staff = True
         super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        if self.is_main_admin:
+            raise PermissionDenied("The main admin cannot be deleted.")
+        return super().delete(*args, **kwargs)
 
     def __str__(self):
         return f"{self.full_name or self.username} ({self.phone})"
