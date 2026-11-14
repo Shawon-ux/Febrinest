@@ -3,12 +3,14 @@
 {% block content %}
 <div class="done">
   <h1>Thank you, {{ order.full_name }}!</h1>
-  <p>Your order <b>#{{ order.pk }}</b> has been placed.</p>
+  <p>Your order <b>#{{ order.pk }}</b> has been placed. Delivery charge ৳{{ order.delivery_charge }} is included in your total.</p>
   <p>Total: <b>৳{{ order.total }}</b> (incl. ৳{{ order.delivery_charge }} delivery) ·
      {{ order.get_payment_method_display }} · <span class="badge">{{ order.get_payment_status_display }}</span></p>
   {% if order.is_online %}<p class="note">We will verify your TrxID <b>{{ order.transaction_id }}</b> and confirm your order shortly.</p>
   {% else %}<p class="note">Please keep ৳{{ order.total }} ready for the delivery person.</p>{% endif %}
+  {% include "store/_cancel_box.html" with o=order %}
   <a class="btn" href="{% url 'store:home' %}">Continue shopping</a>
   <a class="btn ghost" href="{% url 'store:my_orders' %}">My orders</a>
 </div>
 {% endblock %}
+{% block scripts %}{% include "store/_cancel_js.html" %}{% endblock %}

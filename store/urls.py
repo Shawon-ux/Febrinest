@@ -18,5 +18,6 @@ urlpatterns = [
     path("order/<int:pk>/", views.order_done, name="order_done"),
     path("notifications/", views.notifications, name="notifications"),
     path("notifications/<int:pk>/go/", views.notification_go, name="notification_go"),
+    path("order/<int:pk>/cancel/", views.order_cancel, name="order_cancel"),
     path("my-orders/", views.my_orders, name="my_orders"),
 ]

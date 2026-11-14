@@ -1,9 +1,11 @@
+from datetime import timedelta
 from decimal import Decimal
 
 from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.text import slugify
 
 # Every size the shop can offer. Admin picks which apply to each product.
@@ -180,6 +182,21 @@ class Order(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+
+    CANCEL_WINDOW = timedelta(hours=1)
+
+    @property
+    def cancel_deadline(self):
+        return self.created_at + self.CANCEL_WINDOW
+
+    @property
+    def can_cancel(self):
+        """Customer may cancel only within 1 hour of ordering, and only before it ships."""
+        return self.status in ("pending", "confirmed") and timezone.now() < self.cancel_deadline
+
+    @property
+    def cancel_minutes_left(self):
+        return max(0, int((self.cancel_deadline - timezone.now()).total_seconds() // 60) + 1)
 
     @property
     def is_online(self):

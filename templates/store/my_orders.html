@@ -8,9 +8,11 @@
     <span class="badge">{{ o.get_status_display }}</span><span class="badge alt">{{ o.get_payment_status_display }}</span></div>
   {% for i in o.items.all %}<div class="li"><span>{{ i.name }} <small>({{ i.size }}) × {{ i.quantity }}</small></span><b>৳{{ i.line_total }}</b></div>{% endfor %}
   <div class="li"><span>Delivery ({{ o.get_area_display }})</span><b>৳{{ o.delivery_charge }}</b></div>
+  {% include "store/_cancel_box.html" with o=o %}
   <div class="li tot"><span>Total · {{ o.get_payment_method_display }}</span><b>৳{{ o.total }}</b></div>
 </div>
 {% empty %}
 <p class="empty">You haven't ordered anything yet.</p>
 {% endfor %}
 {% endblock %}
+{% block scripts %}{% include "store/_cancel_js.html" %}{% endblock %}

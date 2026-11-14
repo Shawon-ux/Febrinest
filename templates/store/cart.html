@@ -27,7 +27,7 @@
 </div>
 <div class="sum">
   <div><span>Subtotal</span><b>৳{{ subtotal }}</b></div>
-  <small>Delivery charge is added at checkout (৳{{ site.delivery_inside }} inside Dhaka, ৳{{ site.delivery_outside }} outside).</small>
+  <small>Delivery charge must be paid with the order. Orders can be cancelled within 1 hour only. Delivery charge is added at checkout (৳{{ site.delivery_inside }} inside Dhaka, ৳{{ site.delivery_outside }} outside).</small>
   <div class="actions">
     <a class="btn ghost" href="{% url 'store:home' %}">← Continue shopping</a>
     {% if has_blocked %}<button class="btn" disabled>Remove unavailable items</button>

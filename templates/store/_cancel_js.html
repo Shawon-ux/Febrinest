@@ -1,0 +1,17 @@
+<script>
+// Live countdown; the button locks itself the moment the 1-hour window ends (server enforces it too).
+function tick(){
+  document.querySelectorAll('.cd').forEach(el=>{
+    const left = new Date(el.dataset.deadline) - Date.now();
+    const box = el.closest('.cancelbox');
+    if (left <= 0) {
+      box.classList.add('off');
+      box.innerHTML = 'Cancellation window (1 hour) has closed — this order can no longer be cancelled. Call us if you need help.';
+      return;
+    }
+    const m = Math.floor(left/60000), s = Math.floor(left%60000/1000);
+    el.textContent = m + ' min ' + String(s).padStart(2,'0') + ' s';
+  });
+}
+tick(); setInterval(tick, 1000);
+</script>

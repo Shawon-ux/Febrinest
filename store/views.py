@@ -211,6 +211,27 @@ def order_done(request, pk):
 
 
 @login_required
+@require_POST
+def order_cancel(request, pk):
+    order = get_object_or_404(Order, pk=pk, user=request.user)
+    if not order.can_cancel:
+        if order.status == "cancelled":
+            messages.info(request, f"Order #{order.pk} is already cancelled.")
+        else:
+            messages.error(request, "Sorry, orders can only be cancelled within 1 hour of placing them, "
+                                    "and this order can no longer be cancelled. Please call us for help.")
+        return redirect("store:my_orders")
+    order.status = "cancelled"
+    order.save(update_fields=["status"])
+    notify(admins(), f"Order #{order.pk} CANCELLED by customer",
+           f"{order.full_name} · ৳{order.total} · {order.get_payment_method_display()} · "
+           f"payment: {order.get_payment_status_display()}",
+           reverse("dashboard:order_detail", args=[order.pk]))
+    messages.success(request, f"Order #{order.pk} has been cancelled.")
+    return redirect("store:my_orders")
+
+
+@login_required
 def my_orders(request):
     orders = request.user.orders.prefetch_related("items")
     return render(request, "store/my_orders.html", {"orders": orders})

@@ -18,6 +18,14 @@
       {% for e in form.area.errors %}<div class="err">{{ e }}</div>{% endfor %}
     </div>
 
+    <div class="policy">
+      <b>📩 Please read before you order</b>
+      <ul>
+        <li>The <b>delivery charge</b> (৳{{ delivery_inside }} inside Dhaka · ৳{{ delivery_outside }} outside Dhaka) is added to your total and <b>must be paid</b> with your order.</li>
+        <li>You can <b>cancel within 1 hour</b> of placing the order (e.g. order at 10:00 → cancel until 11:00). After that the Cancel button is locked automatically and the order cannot be cancelled.</li>
+      </ul>
+    </div>
+
     <h3>Payment method</h3>
     <div class="opts col">
       <label class="opt"><input type="radio" name="payment_method" value="cod" {% if form.payment_method.value|default:'cod' == 'cod' %}checked{% endif %}> <span><b>Cash on Delivery</b><small>Pay when you receive your order (offline)</small></span></label>

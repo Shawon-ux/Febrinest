@@ -244,3 +244,36 @@ class Notifications(TestCase):
         r = self.client.post(reverse("store:notification_go", args=[n.pk]))
         self.assertEqual(r.url, "/shop/"); n.refresh_from_db(); self.assertTrue(n.is_read)
         self.assertEqual(self.client.get(reverse("store:notifications")).status_code, 200)
+
+
+from datetime import timedelta as _td
+
+from django.utils import timezone as _tz
+
+
+class CancelWindow(TestCase):
+    def setUp(self):
+        self.cust = User.objects.create_user(username="c", full_name="C", email="c@g.com", phone="01922222222", password="x123456")
+        self.admin = User.objects.create_user(username="a", full_name="A", email="a@g.com", phone="01711111111", password="x123456", is_staff=True)
+        self.o = Order.objects.create(user=self.cust, full_name="C", phone="01922222222", address="x", area="inside",
+                                      subtotal=100, delivery_charge=60, total=160, payment_method="cod")
+        self.client.force_login(self.cust)
+
+    def test_cancel_within_hour(self):
+        Order.objects.filter(pk=self.o.pk).update(created_at=_tz.now() - _td(minutes=59))
+        self.assertIn("Cancel order", self.client.get(reverse("store:my_orders")).content.decode())
+        self.client.post(reverse("store:order_cancel", args=[self.o.pk]))
+        self.o.refresh_from_db(); self.assertEqual(self.o.status, "cancelled")
+        self.assertTrue(Notification.objects.filter(user=self.admin, title__contains="CANCELLED").exists())
+
+    def test_blocked_after_hour(self):
+        Order.objects.filter(pk=self.o.pk).update(created_at=_tz.now() - _td(minutes=61))
+        page = self.client.get(reverse("store:my_orders")).content.decode()
+        self.assertNotIn("Cancel order", page); self.assertIn("window (1 hour) has closed", page)
+        self.client.post(reverse("store:order_cancel", args=[self.o.pk]))
+        self.o.refresh_from_db(); self.assertEqual(self.o.status, "pending")
+
+    def test_cannot_cancel_others_or_shipped(self):
+        self.o.status = "shipped"; self.o.save()
+        self.client.post(reverse("store:order_cancel", args=[self.o.pk]))
+        self.o.refresh_from_db(); self.assertEqual(self.o.status, "shipped")

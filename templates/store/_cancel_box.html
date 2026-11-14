@@ -1,0 +1,11 @@
+{% if o.status == "cancelled" %}
+  <div class="cancelbox off">This order was cancelled.</div>
+{% elif o.can_cancel %}
+  <div class="cancelbox">
+    <span>⏱ You can cancel this order for <b class="cd" data-deadline="{{ o.cancel_deadline.isoformat }}">{{ o.cancel_minutes_left }} min</b> (until {{ o.cancel_deadline|date:"H:i" }}).</span>
+    <form method="post" action="{% url 'store:order_cancel' o.pk %}" onsubmit="return confirm('Cancel order #{{ o.pk }}?')">{% csrf_token %}
+      <button class="btn sm danger cbtn">Cancel order</button></form>
+  </div>
+{% elif o.status == "pending" or o.status == "confirmed" %}
+  <div class="cancelbox off">Cancellation window (1 hour) has closed — this order can no longer be cancelled. Call us if you need help.</div>
+{% endif %}
