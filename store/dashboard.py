@@ -68,6 +68,9 @@ def product_delete(request, pk):
     p = get_object_or_404(Product, pk=pk)
     p.delete()
     messages.success(request, f"“{p.name}” deleted.")
+    nxt = request.POST.get("next", "")
+    if nxt.startswith("/") and not nxt.startswith("//"):
+        return redirect(nxt)
     return redirect("dashboard:products")
 
 
