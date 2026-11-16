@@ -8,7 +8,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from accounts.forms import AdminCreateForm
-from accounts.models import User
+from accounts.models import PhoneChangeRequest, User
 
 from .filters import filter_products
 from .forms import CategoryForm, ProductForm, SettingsForm
@@ -255,3 +255,38 @@ def announce(request):
             messages.success(request, f"Sent to {len(targets)} customer{'s' if len(targets) != 1 else ''}.")
             return redirect("dashboard:announce")
     return render(request, "dashboard/announce.html", {"n_customers": customers().count()})
+
+
+# ------------------------------------------------------------ phone change requests
+@staff
+def phone_requests(request):
+    return render(request, "dashboard/phone_requests.html", {
+        "pending": PhoneChangeRequest.objects.filter(status=PhoneChangeRequest.PENDING).select_related("user"),
+        "recent": PhoneChangeRequest.objects.exclude(status=PhoneChangeRequest.PENDING).select_related("user")[:20],
+    })
+
+
+@staff
+@require_POST
+def phone_request_decide(request, pk, decision):
+    req = get_object_or_404(PhoneChangeRequest, pk=pk, status=PhoneChangeRequest.PENDING)
+    if decision == "approve":
+        if User.objects.filter(phone=req.new_phone).exclude(pk=req.user_id).exists():
+            messages.error(request, "That number is now used by another account. Reject the request.")
+            return redirect("dashboard:phone_requests")
+        u = req.user
+        if u.username == u.phone:
+            u.username = req.new_phone
+        u.phone = req.new_phone
+        u.save()
+        req.status = PhoneChangeRequest.APPROVED
+        notify(u, "Phone number updated", f"Your phone number is now {req.new_phone}.", reverse("accounts:profile"))
+        messages.success(request, f"{u.full_name}'s phone changed to {req.new_phone}.")
+    elif decision == "reject":
+        req.status = PhoneChangeRequest.REJECTED
+        notify(req.user, "Phone change request rejected", "Contact us if you need help.", reverse("accounts:profile"))
+        messages.info(request, "Request rejected.")
+    else:
+        return redirect("dashboard:phone_requests")
+    req.save(update_fields=["status"])
+    return redirect("dashboard:phone_requests")

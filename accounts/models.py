@@ -45,3 +45,16 @@ class User(AbstractUser):
 
     def __str__(self):
         return f"{self.full_name or self.username} ({self.phone})"
+
+
+class PhoneChangeRequest(models.Model):
+    PENDING, APPROVED, REJECTED = "pending", "approved", "rejected"
+    STATUS = [(PENDING, "Pending"), (APPROVED, "Approved"), (REJECTED, "Rejected")]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="phone_requests")
+    new_phone = models.CharField(max_length=14, validators=[phone_validator])
+    status = models.CharField(max_length=10, choices=STATUS, default=PENDING)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]

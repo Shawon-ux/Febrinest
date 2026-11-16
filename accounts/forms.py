@@ -71,3 +71,54 @@ class AdminCreateForm(RegisterForm):
         if commit:
             user.save()
         return user
+
+
+class ProfileForm(forms.ModelForm):
+    """Customers may edit their name only; phone changes go through admin approval."""
+
+    class Meta:
+        model = User
+        fields = ["full_name"]
+        labels = {"full_name": "Full name"}
+
+
+class AdminProfileForm(forms.ModelForm):
+    """Admins can edit their own name and phone directly, no approval needed."""
+
+    class Meta:
+        model = User
+        fields = ["full_name", "phone"]
+        labels = {"full_name": "Full name", "phone": "Phone number"}
+
+    def clean_phone(self):
+        phone = normalize_phone(self.cleaned_data["phone"])
+        phone_validator(phone)
+        if User.objects.filter(phone=phone).exclude(pk=self.instance.pk).exists():
+            raise forms.ValidationError("Another account already uses this number.")
+        return phone
+
+    def save(self, commit=True):
+        old = User.objects.get(pk=self.instance.pk).phone
+        user = super().save(commit=False)
+        if user.username == old:
+            user.username = user.phone
+        if commit:
+            user.save()
+        return user
+
+
+class PhoneChangeForm(forms.Form):
+    new_phone = forms.CharField(label="New phone number")
+
+    def __init__(self, *args, user=None, **kwargs):
+        self.user = user
+        super().__init__(*args, **kwargs)
+
+    def clean_new_phone(self):
+        phone = normalize_phone(self.cleaned_data["new_phone"])
+        phone_validator(phone)
+        if phone == self.user.phone:
+            raise forms.ValidationError("That is already your phone number.")
+        if User.objects.filter(phone=phone).exists():
+            raise forms.ValidationError("Another account already uses this number.")
+        return phone

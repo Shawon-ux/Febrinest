@@ -37,6 +37,7 @@
         {% else %}
           <a href="{% url 'store:my_orders' %}">My orders</a>
         {% endif %}
+        <a href="{% url 'accounts:profile' %}">My profile</a>
         <form method="post" action="{% url 'accounts:logout' %}" class="inline">{% csrf_token %}<button class="link">Logout</button></form>
       {% else %}
         <a href="{% url 'accounts:login' %}">Login</a>

@@ -1,0 +1,22 @@
+{% extends "dashboard/base.html" %}
+{% block dash %}
+<h1 class="h1">Phone change requests</h1>
+<div class="tw"><table class="tbl">
+  <tr><th>Customer</th><th>Current</th><th>Requested</th><th>Date</th><th></th></tr>
+  {% for r in pending %}
+  <tr>
+    <td><b>{{ r.user.full_name }}</b></td><td>{{ r.user.phone }}</td><td>{{ r.new_phone }}</td><td>{{ r.created_at|date:"d M Y H:i" }}</td>
+    <td>
+      <form method="post" action="{% url 'dashboard:phone_request_decide' r.pk 'approve' %}" style="display:inline">{% csrf_token %}<button class="btn sm">Approve</button></form>
+      <form method="post" action="{% url 'dashboard:phone_request_decide' r.pk 'reject' %}" style="display:inline">{% csrf_token %}<button class="btn sm danger">Reject</button></form>
+    </td>
+  </tr>
+  {% empty %}<tr><td colspan="5" class="muted">No pending requests.</td></tr>{% endfor %}
+</table></div>
+{% if recent %}
+<h3>Recent</h3>
+<div class="tw"><table class="tbl">
+  {% for r in recent %}<tr><td>{{ r.user.full_name }}</td><td>{{ r.new_phone }}</td><td>{{ r.get_status_display }}</td><td>{{ r.created_at|date:"d M Y" }}</td></tr>{% endfor %}
+</table></div>
+{% endif %}
+{% endblock %}
