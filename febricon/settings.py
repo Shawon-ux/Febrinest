@@ -60,6 +60,7 @@ DATABASES = {
 
 AUTH_USER_MODEL = "accounts.User"
 AUTHENTICATION_BACKENDS = ["accounts.backends.PhoneOrEmailBackend"]
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # fresh visit = logged out, starts at home
 LOGIN_URL = "accounts:login"
 LOGIN_REDIRECT_URL = "store:home"
 LOGOUT_REDIRECT_URL = "store:home"
